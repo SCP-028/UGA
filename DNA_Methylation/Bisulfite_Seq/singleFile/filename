@@ -1,0 +1,65 @@
+'TCGA-COAD'
+####################
+1	ResultCount_MERGING_1_NIC1254A45.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+2	TCGA-AA-3518-01A-02D-1518-05_b9591620-97e7-4355-b18c-36fa74851106_Colon_tumor.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+3	TCGA-AA-3518-11A-01D-1518-05_d85e9d86-091c-4629-876e-d1eba7b78e83_Colon_normal.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+'TCGA-BLCA'
+####################
+4	ResultCount_MERGING_1_NIC1254A94.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+5	ResultCount_MERGING_1_NIC1254A93.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+6	ResultCount_MERGING_1_NIC1254A92.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+7	ResultCount_MERGING_1_NIC1254A96.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+8	ResultCount_MERGING_1_NIC1254A89.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+9	ResultCount_MERGING_1_NIC1254A91.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+10	ResultCount_MERGING_1_NIC1254A95.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed
+'TCGA-BRCA'
+####################
+11	filename = 'ResultCount_MERGING_1_NIC1254A16.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+12	filename = 'ResultCount_MERGING_1_NIC1254A15.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+13	filename = 'TCGA-A7-A0CE-11A-21D-A148-05_805f2c82-49d5-4994-a2a5-98dd1b832f0b_Breast_normal.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+14	filename = 'ResultCount_MERGING_1_NIC1254A18.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+15	filename = 'TCGA-A7-A0CE-01A-11D-A148-05_4ff7626b-4c2f-40fd-9df1-10c1a488402a_Breast_tumor.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+16	filename = 'ResultCount_MERGING_1_NIC1254A17.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+'TCGA-LUAD'
+####################
+17	filename = 'ResultCount_MERGING_1_NIC1254A73.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+18	filename = 'ResultCount_MERGING_1_NIC1254A70.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+19	filename = 'ResultCount_MERGING_1_NIC1254A69.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+20	filename = 'ResultCount_MERGING_1_NIC1254A71.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+21	filename = 'ResultCount_MERGING_1_NIC1254A72.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+22	filename = 'ResultCount_MERGING_1_NIC1254A68.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+'TCGA-UCEC'
+####################
+23	filename = 'TCGA-AX-A1CI-11A-11D-A17H-05_ac5058ed-1d03-4555-8f5b-a1a88eae9cc4_Endo_normal.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+24	filename = 'ResultCount_MERGING_1_NIC1254A113.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+25	filename = 'ResultCount_MERGING_1_NIC1254A109.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+26	filename = 'ResultCount_MERGING_1_NIC1254A112.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+27	filename = 'TCGA-AX-A1CI-01A-11D-A17H-05_e31eb5a4-d191-4bc2-bb4d-cbd3f23bc7db_Endo_tumor.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+28	filename = 'ResultCount_MERGING_1_NIC1254A111.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+'TCGA-LUSC'
+####################
+29	filename = 'ResultCount_MERGING_1_NIC1254A14.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+30	filename = 'ResultCount_MERGING_1_NIC1254A67.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+31	filename = 'TCGA-60-2722-01A-01D-1871-05_720f6804-059c-4516-a77d-74e8a01c739b_Lung_tumor.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+32	filename = 'ResultCount_MERGING_1_NIC1254A12.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+33	filename = 'ResultCount_MERGING_1_NIC1254A13.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+'TCGA-STAD'
+####################
+34	filename = 'ResultCount_MERGING_1_NIC1254A76.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+35	filename = 'ResultCount_MERGING_1_NIC1254A78.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+36	filename = 'ResultCount_MERGING_1_NIC1254A77.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+37	filename = 'ResultCount_MERGING_1_NIC1254A110.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+38	filename = 'ResultCount_MERGING_1_NIC1254A75.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+'TCGA-READ'
+####################
+39	filename = 'ResultCount_MERGING_1_NIC1254A50.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+40	filename = 'ResultCount_MERGING_1_NIC1254A51.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+41	filename = 'ResultCount_MERGING_1_NIC1254A49.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+'TCGA-GBM'
+####################
+42	filename = 'ResultCount_MERGING_1_NIC1254A48.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+43	filename = 'ResultCount_MERGING_1_NIC1254A54.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+44	filename = 'ResultCount_MERGING_1_NIC1254A47.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+45	filename = 'ResultCount_MERGING_1_NIC1254A46.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+46	filename = 'ResultCount_MERGING_1_NIC1254A52.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
+47	filename = 'ResultCount_MERGING_1_NIC1254A53.hg19_rCRSchrm.fa.realign.mdups.recal.cpg.filtered.sort.CG.6plus2.fixed.bed'
