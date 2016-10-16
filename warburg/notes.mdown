@@ -34,3 +34,5 @@
 - Lactate
 - Glutamine
 - Folate
+
+Same biomass, cancer cells don't have enough NADPH / NAD to synthesize all the biomass?!
