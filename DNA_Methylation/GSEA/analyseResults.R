@@ -1,5 +1,6 @@
 subsetBy <- function(df, project = NULL, type = c("normal", "tumor"),
-                      coef = NULL, annotation = NULL, cutoff = NULL){
+                      coef = NULL, annotation = NULL, cutoff = NULL,
+                      score = c("ES", "R2")){
 #   Return a subset of the original data frame
     if (!is.null(project)){
         project <- paste0("(", project, ")", collapse = "|")
@@ -7,10 +8,12 @@ subsetBy <- function(df, project = NULL, type = c("normal", "tumor"),
         df <- df[ ,c(1, tag.project)]
     }
     type <- paste0("(", type, ")", collapse = "|")
+    score <- paste0("(", score, ")", collapse = "|")
     df <- df[ ,c(1, grep(ignore.case = T, type, colnames(df)))]
+    df <- df[ ,c(1, grep(ignore.case = F, score, colnames(df)))]
     if (!is.null(coef)){
         coef <- paste0(coef, collapse = "")
-        coef <- paste0("[", coef, "]")
+        coef <- paste0("[", coef, "]", "-")
         tag.coef <- grep(ignore.case = T, coef, colnames(df))
         df <- df[ ,c(1, tag.coef)]
     }

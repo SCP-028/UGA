@@ -25,7 +25,8 @@
 - Total number of proteins in HeLa cell: ~2E+9 polypeptides/cell (~10^10)
 - Rate of ATP production in fibroblast: ~1E+9 ATP/cell/sec
 - Total protein in HeLa cell: ~150pg
-- 
+- Total amount of RNA in cell: ~10-30pg/cell
+
 
 ## Stuff
 - ATP
