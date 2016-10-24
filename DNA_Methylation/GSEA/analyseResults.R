@@ -40,24 +40,33 @@ getGenes <- function(keyword, gsc = NULL){
     pathways <- data.frame( pathway = sub("(.*)\\..*", "\\1", names(pathways)),
                             uniprotKB = sub(".*\\.(.*)", "\\1", names(pathways)),
                             entrez = sub(".*\\|(.*)", "\\1", pathways),
-                            symbol = sub("(.*)\\|.*", "\\1", pathways))
+                            symbol = sub("(.*)\\|.*", "\\1", pathways) )
     rownames(pathways) <- 1:nrow(pathways)
     try(return(pathways))
 }
 
 compareSameProj <- function(df, project, cutoff = 0.5, type){
-#   Compare differences between normal and cancer samples
+#   Compare differences between normal and tumor samples
 #   cutoff = abs(tumor - normal)
-#   type: cancer - Cancer better than normal
-#         normal - Normal better than cancer
+#   type: tumor - Tumor better than normal
+#         normal - Normal better than tumor
     df <- subsetBy(df, project = project)
     tag.ES <- grep("ES", colnames(df))
-    x.ES <- grep(paste(type, "ES", sep = ".*"), colnames(df))
+    x.ES <- grep( paste(type, "ES", sep = ".*"), colnames(df) )
     y.ES <- tag.ES[!(tag.ES %in% x.ES)]  # Always x > y
     tag.R2 <- grep("R2", colnames(df))
-    x.R2 <- grep(paste(type, "R2", sep = ".*"), colnames(df))
+    x.R2 <- grep( paste(type, "R2", sep = ".*"), colnames(df) )
     y.R2 <- tag.R2[!(tag.R2 %in% x.R2)]
-    for(i in seq_along(tag.ES.normal)){
-        
-    }
+    message( "Level 1: don't have Enrichment score\n",
+             "Level 2: have a ES <= 0\n",
+             "Level 3: have a positive ES, but with a corresponding P value > 0.05\n",
+             "Level 4: Well predicted (somewhat, depends on the ES" )
+    tag.level.1 <- 
+    df[ ,x.R2] <- apply(df[ ,x.R2], 1:2, function(x) 
+                        ifelse(is.na(x), NA, ifelse(
+                        (x > 0) && (x <= 0.05), x, NA)) )
+    df[ ,x.ES] <- apply(df[ ,x.ES], 1:2, function(x)
+                        ifelse(is.na(x), NA, ifelse(
+                        x > 0, x, NA)) )
+    
 }
