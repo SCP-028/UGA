@@ -45,6 +45,9 @@ getGenes <- function(keyword, gsc = NULL){
     try(return(pathways))
 }
 
+##To-do: get exact prediction results of the gene(s)
+
+
 compareSameProj <- function(df, project, cutoff = 0.5, type){
 #   Compare differences between normal and tumor samples
 #   cutoff = abs(tumor - normal)

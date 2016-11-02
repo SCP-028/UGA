@@ -46,7 +46,7 @@ calc.gsea.1 <- function(t.stat, weighted.score.type){
     t.stat=t.stat[!is.na(t.stat)]
     gene.labels=names(t.stat)
 
-    pathways=sapply(pathways, function(x) x[-c(1:2)])
+    #pathways=sapply(pathways, function(x) x[-c(1:2)])
     #pathways=pathways.list.GOMaco.CORUM.RCT.HGNC.Msigdb
     Ng <- length(pathways)
     temp.size.G=sapply(pathways, function(x) length(x))
@@ -68,7 +68,7 @@ calc.gsea.1 <- function(t.stat, weighted.score.type){
     nperm=5000
     scores=vector("numeric",Ng)
     pvals=vector("numeric",Ng)
-    pval.indic=1
+    pval.indic=1  # Permutation test
 
     obs.gene.list2 <- order(t.stat,decreasing=TRUE)
     phi <- matrix(nrow = Ng, ncol = nperm)
