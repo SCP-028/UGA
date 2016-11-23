@@ -53,8 +53,9 @@ buildLnr <- function(df, methy, expression, p.value = F){
             lmodel[[i]] <- output[1]
             r2df[i,2] <- output[2]
             setTxtProgressBar(pb, i)
+        }
     } else {
-        ## Build data frame to store R^2 and p value
+      ## Build data frame to store R^2 and p value
         r2df <- data.frame(rownames(expression),
                            rep(0, nrow(expression)),
                            rep(0, nrow(expression)))
