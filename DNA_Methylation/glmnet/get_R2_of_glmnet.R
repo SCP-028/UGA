@@ -28,7 +28,7 @@ getCpGs <- function(df, coefNum){
 #   Get the matrices of corresponding CpG islands
 
     CpG_list <- list()
-    for (i in 1:length(df)){  # List too complicated, use loop rather than apply <- Room for improvement!
+    for (i in 1:length(df)){
         x <- df[[i]]
         CpG_list[[i]] <- getNzero(x, coefNum)
     }
@@ -36,40 +36,85 @@ getCpGs <- function(df, coefNum){
 }
 
 
-buildLnr <- function(df, methy, expression, annot){
+buildLnr <- function(df, methy, expression, p.value = F){
 #   Build linear model of Gene Expression ~ X CpG islands
 
-    r2df <- data.frame(rownames(expression), rep(0, nrow(expression)))
-    colnames(r2df) <- c("Gene_Symbol", "R_Square") # Build data frame to store R^2
     lmodel <- list()  # List to store linear model results
-    pb <- txtProgressBar(min = 0, max = length(df), char = "#", style = 3)
-    for (i in 1:length(df)){
-        temp <- df[[i]]
-        output <- getR2(i, temp, methy, expression, annot)
-        lmodel[[i]] <- output[1]
-        r2df[i,2] <- output[2]
-        setTxtProgressBar(pb, i)
+    pb <- txtProgressBar(min = 0, max = length(df),
+                         char = "#", style = 3)
+    if (p.value == F){
+        ## Build data frame to store R^2
+        r2df <- data.frame(rownames(expression),
+                           rep(0, nrow(expression)))
+        colnames(r2df) <- c("Gene_Symbol", "R_Square")
+        for (i in 1:length(df)){
+            temp <- df[[i]]
+            output <- getR2(i, temp, methy, expression, p.value)
+            lmodel[[i]] <- output[1]
+            r2df[i,2] <- output[2]
+            setTxtProgressBar(pb, i)
+    } else {
+        ## Build data frame to store R^2 and p value
+        r2df <- data.frame(rownames(expression),
+                           rep(0, nrow(expression)),
+                           rep(0, nrow(expression)))
+        colnames(r2df) <- c("Gene_Symbol", "R_Square", "p_value")
+        for (i in 1:length(df)){
+            temp <- df[[i]]
+            output <- getR2(i, temp, methy, expression, p.value)
+            lmodel[[i]] <- output[1]
+            r2df[i,2] <- output[2]
+            r2df[i,3] <- output[3]
+            setTxtProgressBar(pb, i)
+        }
     }
     r2df <- r2df[complete.cases(r2df$R_Square), ]
     return(list(lmodel, r2df))
 }
 
 
-getR2 <- function(i, temp, methy, expression, annot){
+getR2 <- function(i, temp, methy, expression, p.value, nperm = 5000){
 #   Fit linear model and calculate R^2
 
-    if (class(temp) == "character" | is.na(expression[i,1])){
-    # Remove genes that can't be predicted
-        return(list(0, NA))
-    }
-    if (class(temp) == "matrix"){  # One or more CpG islands
-        # CpG islands
-        x <- methy[rownames(methy) %in% rownames(temp), , drop = F]
-        # Gene expression data
-        y <- as.data.frame(expression[i, , drop = F])
-        fitlm <- as.data.frame(t(rbind(y,x)))
-        fitlm <- lm(fitlm)  # Linear model
-        rSquare <- summary(fitlm)$r.squared  # R^2
-        return(list(fitlm, rSquare))  # Return values
-    }
+    if (p.value == T){
+        if (class(temp) == "character" | is.na(expression[i,1])){
+        # Remove genes that can't be predicted
+            return(list(0, NA, NA))
+        }
+        if (class(temp) == "matrix"){
+        # One or more CpG islands
+            x <- methy[rownames(methy) %in% rownames(temp), , drop = F]
+            # Gene expression data
+            y <- as.data.frame(expression[i, , drop = F])
+            fitlm <- as.data.frame(t(rbind(y,x)))
+            fitlm <- lm(fitlm)  # Linear model
+            rSquare <- summary(fitlm)$r.squared  # R^2
+            background <- numeric()
+            for (j in 1:nperm) {
+                y.sample <- sample(1:ncol(y))
+                y <- y[ ,y.sample, drop = F]
+                fitlm <- as.data.frame(t(rbind(y,x)))
+                fitlm <- lm(fitlm)
+                background <- c(background,
+                                summary(fitlm)$r.squared)
+            }
+            pValue <- sum(background > rSquare) / nperm
+            return(list(fitlm, rSquare, pValue))  # Return values
+        }
+    } else {
+        if (class(temp) == "character" | is.na(expression[i,1])){
+        # Remove genes that can't be predicted
+            return(list(0, NA))
+        }
+        if (class(temp) == "matrix"){
+        # One or more CpG islands
+            x <- methy[rownames(methy) %in% rownames(temp), , drop = F]
+            # Gene expression data
+            y <- as.data.frame(expression[i, , drop = F])
+            fitlm <- as.data.frame(t(rbind(y,x)))
+            fitlm <- lm(fitlm)  # Linear model
+            rSquare <- summary(fitlm)$r.squared  # R^2
+            return(list(fitlm, rSquare))  # Return values
+        }
+    } 
 }
