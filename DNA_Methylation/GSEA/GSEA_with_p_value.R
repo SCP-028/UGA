@@ -22,9 +22,9 @@ glmnet.normal <- glmnet.normal[order(glmnet.normal)]
 glmnet.tumor <- list.files("./glmnet/", pattern = "\\.tumor")
 glmnet.tumor <- glmnet.tumor[order(glmnet.tumor)]
 projects <- sub("(.*)\\.RData", "\\1", glmnet.normal)
-merge.data <- paste0("./mergeData", merge.data)
-glmnet.normal <- paste0("./glmnet", glmnet.normal)
-glmnet.tumor <- paste0("./glmnet", glmnet.tumor)
+merge.data <- paste0("./mergeData/", merge.data)
+glmnet.normal <- paste0("./glmnet/", glmnet.normal)
+glmnet.tumor <- paste0("./glmnet/", glmnet.tumor)
 
 ## Decide coefficient number to take out (2:5)
 coef.num <- 2
