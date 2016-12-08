@@ -17,7 +17,7 @@ getNzero <- function(listInList, coefNum){
             CpG <- as.matrix(CpG[CpG != 0])  # Same as last if
             colnames(CpG) <- nzero
             return(CpG)
-        } else { # No lambda to make x == coefNum
+        } else { # No lambda to make x == coefNum127
             return("Remove")
         }
     }
@@ -40,13 +40,13 @@ buildLnr <- function(df, methy, expression, p.value = F){
 #   Build linear model of Gene Expression ~ X CpG islands
 
     lmodel <- list()  # List to store linear model results
-    pb <- txtProgressBar(min = 0, max = length(df),
-                         char = "#", style = 3)
     if (p.value == F){
         ## Build data frame to store R^2
         r2df <- data.frame(rownames(expression),
                            rep(0, nrow(expression)))
         colnames(r2df) <- c("Gene_Symbol", "R_Square")
+        pb <- txtProgressBar(min = 0, max = length(df),
+                             char = "#", style = 3)
         for (i in 1:length(df)){
             temp <- df[[i]]
             output <- getR2(i, temp, methy, expression, p.value)
@@ -60,6 +60,8 @@ buildLnr <- function(df, methy, expression, p.value = F){
                            rep(0, nrow(expression)),
                            rep(0, nrow(expression)))
         colnames(r2df) <- c("Gene_Symbol", "R_Square", "p_value")
+        pb <- txtProgressBar(min = 0, max = length(df),
+                             char = "#", style = 3)
         for (i in 1:length(df)){
             temp <- df[[i]]
             output <- getR2(i, temp, methy, expression, p.value)
@@ -90,7 +92,7 @@ getR2 <- function(i, temp, methy, expression, p.value, nperm = 5000){
             fitlm <- as.data.frame(t(rbind(y,x)))
             fitlm <- lm(fitlm)  # Linear model
             rSquare <- summary(fitlm)$r.squared  # R^2
-            background <- numeric()
+            background <- numeric()  # Permutation test
             for (j in 1:nperm) {
                 y.sample <- sample(1:ncol(y))
                 y <- y[ ,y.sample, drop = F]
