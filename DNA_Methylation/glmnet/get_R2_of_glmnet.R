@@ -1,5 +1,6 @@
-# Function set for extracting certain CpG islands from glmnet results
-# and calculating a R^2 value.
+# Function set for extracting certain CpG islands from glmnet results,
+# and calculating a R^2 value,
+# and determining project numbers.
 
 getNzero <- function(listInList, coefNum){
 #   Grep `coefNum` Xs and store them as a matrix in a list.
@@ -120,4 +121,25 @@ getR2 <- function(i, temp, methy, expression, p.value, nperm = 5000){
             return(list(fitlm, rSquare))  # Return values
         }
     } 
+}
+
+what.project <- function(projects = c("BLCA", "BRCA", "COAD",
+                                      "ESCA", "HNSC", "KIRC",
+                                      "KIRP", "LIHC", "LUAD",
+                                      "LUSC", "PRAD", "THCA"),
+                         input, output,
+                         coef.num = "", type = "") {
+#   Find out which projects are finished, and return the rest
+    all.files <- list.files(input,
+                            pattern = paste0(type, "GLM"))
+    finished.files <- list.files(output,
+                            pattern = paste0("coef", coef.num))
+    proj.regex <- paste(projects, collapse = "|")
+    finished.proj <- sub(paste0("(", proj.regex, ")", ".*"),
+                         "\\1", finished.files)
+    finished.regex <- paste(finished.proj, collapse = "|")
+    input.finished <- all.files[grepl(
+                                finished.regex, all.files)]
+    input.todo <- all.files[!all.files %in% input.finished]
+    return(input.todo)
 }

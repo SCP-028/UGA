@@ -68,11 +68,11 @@ calc.gsea.1 <- function(t.stat, weighted.score.type){
     nperm=5000
     scores=vector("numeric",Ng)
     pvals=vector("numeric",Ng)
-    pval.indic=1  # Permutation test
+    pval.indic=0  # Permutation test
 
     obs.gene.list2 <- order(t.stat,decreasing=TRUE)
     phi <- matrix(nrow = Ng, ncol = nperm)
-    pb <- txtProgressBar(min = 0, max = Ng,
+    #pb <- txtProgressBar(min = 0, max = Ng,
                         char = "#", style = 3)
     for (i in 1:Ng) {
         # if(i %%100==1){
@@ -93,9 +93,9 @@ calc.gsea.1 <- function(t.stat, weighted.score.type){
         if(pval.indic==1){
             pvals[i] = ifelse(GSEA.results$ES > 0, sum(phi[i,] > GSEA.results$ES)/nperm , -sum(phi[i,] < GSEA.results$ES)/nperm)
         }
-        setTxtProgressBar(pb, i)
+        #setTxtProgressBar(pb, i)
         gc()
-    }
+    
     data.ES=cbind(scores, pvals)
     colnames(data.ES)=c("ES","pval")
     rownames(data.ES)=rownames(gs.new)
