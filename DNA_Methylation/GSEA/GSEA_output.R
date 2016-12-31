@@ -25,7 +25,7 @@ projects <- sub("(\\w*)\\.nor.*",
                 "\\1", files.p)  # BLCA.normalGLM_coef2_lm.RData
 
 ## Separate normal and tumor files
-dir.create("./GSEA161123/sep", showWarnings = F)
+dir.create("./GSEA161123/sep/", showWarnings = F)
 for (i in seq_along(projects)) {
     load(paste0("./GSEA161123/", files.p[i]))
     save(R2.p.normal, model.normal,

@@ -12,6 +12,3 @@ This is just some exercising work, downloading data from TCGA and organizing the
 
 ## Warburg
 *Really* important but not having any progress lately. Should be a workaround in using gene expression and Km data, rather than just biomass and concentration in cell.
-
-## Python
-Discontinued. Stuff I wrote during learning python. Not exactly related to UGA anyway, just some reference code in case I forget stuff.
