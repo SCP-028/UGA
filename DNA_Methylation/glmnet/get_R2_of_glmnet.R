@@ -18,7 +18,7 @@ getNzero <- function(listInList, coefNum){
             CpG <- as.matrix(CpG[CpG != 0])  # Same as last if
             colnames(CpG) <- nzero
             return(CpG)
-        } else { # No lambda to make x == coefNum127
+        } else { # No lambda to make x == coefNum
             return("Remove")
         }
     }
