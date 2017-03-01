@@ -12,16 +12,16 @@ methyFiles <- paste0("./methylation450/", projects,
                 ".TNMethylation450.RData")
 expressionFiles <- paste0("./expression/", projects, 
                 ".update1.genes.normalized.RData")
-resultFiles <- paste0("./glmnet_mTF/", projects)
+resultFiles <- paste0("./glmnet_mTF/results/", projects)
 
 # Remove duplicated IlmnID, Gene name, and Gene group
 # source("https://raw.githubusercontent.com/ggrothendieck/gsubfn/master/R/list.R")
-list[annot, tf] <- readAnnot()
+rlist[annot, tf] <- readAnnot()
 
 library(foreach)
 library(doMC)
-registerDoMC(length(projects) / 2)  # 14 / 2 = 7
-foreach (i = seq_along(projects)) %dopar% {
+registerDoMC(10)
+for (i in seq_along(projects)){
 #   Different tumor types
     print(paste0("Working on project: ", projects[i]))
     load(methyFiles[i])
@@ -33,8 +33,8 @@ foreach (i = seq_along(projects)) %dopar% {
         load(expressionFiles[i])
         datan <- convertName(datan)
         datat <- convertName(datat)
-        list[methyn, datan] <- pairNames(methyn, datan, annot)
-        list[methyt, datat] <- pairNames(methyt, datat, annot)
+        rlist[methyn, datan] <- pairNames(methyn, datan, annot)
+        rlist[methyt, datat] <- pairNames(methyt, datat, annot)
         normalGLM <- fitGLM(methyn, datan, annot, tf)
         save(normalGLM, file = paste0(resultFiles[i],
                                     ".normalGLM.RData"))

@@ -10,8 +10,9 @@ rlist <- structure(NA,class="result")
    x
 }
 
+####### BUILD GLM #######
 getProject <- function(methy, expression){
-#   Return project names that exist in both folders
+#   Return project names that exist in both folders (the 2 args)
     x <- sub("(.*)\\.TN.*", "\\1", methy)
     y <- sub("(.*)\\.up.*", "\\1", expression)
     z <- x[x %in% y]
@@ -27,6 +28,9 @@ readAnnot <- function(methyPath="./glmnet_TF/annot_removed.csv",
     annot <- read.csv(methyPath, header=T, sep="\t")
     tf <- read.csv(tfPath, header=T, sep="\t")
     annot <- anti_join(annot, annot[duplicated((annot[ ,c(1,2,4)])), ])
+    x <- annot$Gene_Group
+    levels(x) <- c(levels(x), "TFmethy")
+    annot$Gene_Group <- x
     tf$PMID <- NULL
     tf <- tf[tf$Gene %in% annot$Gene_Name, ]
     tf <- tf[tf$TF %in% annot$Gene_Name, ]
@@ -74,6 +78,9 @@ pairNames <- function(methy, expression, annot){
 
 fitGLM <- function(methy, expression, annotation, trans){
 #   Use glmnet to fit GLM
+#   methy and expression are 2 data.frames, and annotation and trans
+#   are the annotation files for matching CpG islands to genes, and 
+#   transcription factors to genes, respectively.
     library(glmnet)
     GLMdata <- vector("list", nrow(expression))
     for(i in 1:nrow(expression)){
@@ -91,7 +98,7 @@ fitGLM <- function(methy, expression, annotation, trans){
             df <- list("Gene" = rownames(y),
                        "TF" = z[z != rownames(y)],
                        "CpG site" = CpG,
-                       "GLM" = cv.glmnet(x,y))
+                       "GLM" = cv.glmnet(x,y, parallel = T))
             GLMdata[[i]] <- df
         }
     }
@@ -99,4 +106,136 @@ fitGLM <- function(methy, expression, annotation, trans){
     GLMdata <- Filter(Negate(function(x) is.null(unlist(x))),
                       GLMdata)
     return(GLMdata)
+}
+
+####### EXTRACT RESULTS #######
+buildDf <- function(row.num, col.num = 12){
+#   Build data.frame to store all results
+    df <- data.frame(matrix(nrow = row.num, ncol = col.num))
+    return(df)
+}
+
+extractTF <- function(df){
+#   Return a list of transcription factors in the same order as the input
+#   data frame's gene order.
+    df.tf <- lapply(df, function(x) paste(x$TF, collapse = ";"))
+    return(df.tf)
+}
+
+extractLambda <- function(df, func = "lambda.min"){
+#   Return a list of lambda.min or lambda.1st.
+    if (func == "lambda.min"){
+        df <- lapply(df, function(x) x$GLM$lambda.min)
+    }
+    if (func == "lambda.1se"){
+        df <- lapply(df, function(x) x$GLM$lambda.1se)
+    }
+    return(df)
+}
+
+extractCoef <- function(df, predictor = 2){
+#   Return a data frame of %dev and lambda values.
+    df <- lapply(df, function(x) x$GLM$glmnet.fit)
+    # predictor num, %dev, and lambda
+    df <- lapply(df, function(x) cbind(x$df, x$dev.ratio, x$lambda))
+    df <- lapply(df, function(x) x[x[ ,1] == predictor, , drop = F])
+    df <- lapply(df, function(x) as.data.frame(x))
+    resultdf <- data.frame(matrix(nrow = length(df), ncol = 2))
+    for (i in seq_along(df)){
+        temp <- df[[i]]
+        if (nrow(temp) != 0){
+            temp <- unlist(temp[nrow(temp), ])
+            resultdf[i, ] <- tail(temp, 2)
+        }
+    }
+    colnames(resultdf) <- c(paste0("coef", predictor, "_%dev"),
+                            paste0("coef", predictor, "_lambda"))
+    rownames(resultdf) <- names(df)
+    return(resultdf)
+}
+
+getSummary <- function(df){
+#   Summarize different model performances with 2->5 predictors.
+    result <- buildDf(row.num = length(df), col.num = 4)
+    colnames(result) <- c("gene_symbol", "transcription_factor",
+                          "lambda_1se", "lambda_min")
+    result$gene_symbol <- names(df)
+    result$transcription_factor <- extractTF(df)
+    result$lambda_1se <- extractLambda(df, func = "lambda.1se")
+    result$lambda_min <- extractLambda(df, func = "lambda.min")
+    for (i in 2:5){
+    #   2 to 5 predictors
+        temp <- extractCoef(df, predictor = i)
+        result <- cbind.data.frame(result, temp)
+    }
+    return(result)
+}
+
+
+getCpG <- function(GLMlist, predictor, resultdf){
+#   get CpG islands' names (and groups)
+    library(glmnet)
+    predictor <- paste0("coef", predictor, "_lambda")
+    CpG.list <- vector("list", length(GLMlist))
+    for (i in seq_along(CpG.list)){
+        # Extract model coefficients from GLM objects, s is lambda
+        tempLambda <- resultdf[predictor][i,1]
+        if (!is.na(tempLambda)) {        
+            temp <- as.matrix(coef(GLMlist[[i]]$GLM,
+                              s = tempLambda))
+            if (ncol(temp) != 0){
+                temp <- names(temp[temp[ ,1] != 0, ])
+                temp <- temp[temp != "(Intercept)"]
+                CpG.list[i] <- paste(temp, collapse = ";")
+            }
+        }
+    }
+    return(CpG.list)
+}
+
+getGenelist <- function(genename, resultdf){
+#   Return a gene's symbol and its (if any) TF.
+    x <- resultdf[rownames(resultdf) == genename, ]
+    x <- c(x$gene_symbol,
+           unlist(strsplit(unlist(x$transcription_factor), ";")))
+    return(x)
+}
+
+calcGroup <- function(result, resultdf, predictor, annotation){
+#   Calculate methylation groups for predictors.
+    predictor <- paste0("coef", predictor, "_CpG")
+    cpg <- result[ ,2]
+    names(cpg) <- result$gene_symbol
+    cpg <- unlist(cpg, recursive = F)
+    cpg <- lapply(cpg, function(x) unlist(strsplit(x, ";")))
+    df <- buildDf(row.num = length(cpg), col.num = 7)
+    colnames(df) <- c("1stExon", "3'UTR", "5'UTR", "Body", "TSS1500",
+                      "TSS200", "TFmethy")
+    rownames(df) <- names(cpg)
+    for (i in seq_along(cpg)){
+        x <- annot[annot$IlmnID %in% cpg[[i]], ]
+        x <- x[x$Gene_Name %in% getGenelist(names(cpg)[i], resultdf), ]
+        x$Gene_Group[x$Gene_Name != names(cpg)[i]] <- "TFmethy"
+        df[i, ] <- t(as.matrix(summary(x$Gene_Group)))
+    }
+    df <- merge(result, df, by = "row.names", all.x = T)
+    return(df)
+}
+
+detailSummary <- function(GLMlist, predictor, resultdf,
+                          annotation, transAnnot){
+#   GLMlist is normalGLM or tumorGLM, used to extract coef and other info,
+#   predictor is a number between 2 and 5,
+#   resultdf is for less computation,
+#   annot and trans are annotation files.
+    result <- buildDf(row.num = length(GLMlist), col.num = 4)
+    colnames(result) <- c("gene_symbol", "coef2_CpG", "coef2_%dev",
+                          "coef2_lambda")
+    rownames(result) <- result$gene_symbol <- names(GLMlist)
+    result$"coef2_%dev" <- resultdf$"coef2_%dev"
+    result$coef2_lambda <- resultdf$coef2_lambda
+    result$coef2_CpG <- getCpG(GLMlist, predictor, resultdf)
+    result <- calcGroup(result, resultdf, predictor, annotation)
+    result$Row.names <- NULL
+    return(result)
 }
