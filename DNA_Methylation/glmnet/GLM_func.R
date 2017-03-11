@@ -28,6 +28,7 @@ readAnnot <- function(methyPath="./glmnet_TF/annot_removed.csv",
     annot <- read.csv(methyPath, header=T, sep="\t")
     tf <- read.csv(tfPath, header=T, sep="\t")
     annot <- anti_join(annot, annot[duplicated((annot[ ,c(1,2,4)])), ])
+    # Add level to factor
     x <- annot$Gene_Group
     levels(x) <- c(levels(x), "TFmethy")
     annot$Gene_Group <- x
@@ -36,6 +37,56 @@ readAnnot <- function(methyPath="./glmnet_TF/annot_removed.csv",
     tf <- tf[tf$TF %in% annot$Gene_Name, ]
     # TODO: aggregate TF name and Interaction
     return(list(annot, tf))
+}
+
+addTRED <- function(filePath = "./TRED.csv"){
+#   Add info from the TRED database, return data frame.
+#   filePath: TRED.csv file
+    df <- read.csv(filePath, sep = "\t", header = T)
+    s <- strsplit(as.character(df$Gene), split = "; ")
+    df <- data.frame(TF = rep(df$TF, sapply(s, length)), Gene = unlist(s))
+    return(df)
+}
+
+addNEPH <- function(filePath = "./Neph2012/"){
+#   Add info from the Neph2012 database, return data frame.
+#   filePath: folder containing 41 cell types
+    pathList <- list.files(filePath, pattern = "\\.genes$", recursive = T)
+    pathList <- paste0(filePath, pathList)
+    df <- read.csv(pathList[1], header = F, sep = "\t")
+    for (i in seq_along(pathList)){
+        temp <- read.csv(pathList[i], header = F, sep = "\t")
+        df <- merge(df, temp, all = T)
+    }
+    colnames(df) <- c("TF", "Gene")
+    return(df)
+}
+
+addENCODE <- function(){
+#   Use lists from tftargets to generate data frame of ENCODE results.
+    library(tftargets)
+    library(mygene)
+    df <- data.frame(TF = names(ENCODE),
+                     Gene = sapply(ENCODE, function(x) paste(x, collapse = "; ")))
+    s <- strsplit(as.character(df$Gene), split = "; ")
+    df <- data.frame(TF = rep(df$TF, sapply(s, length)), Gene = unlist(s))
+    temp <- as.data.frame(queryMany(df$Gene,
+                                    scopes = "entrezgene",
+                                    fields = "symbol",
+                                    species = "human"))
+    df$Gene <- temp$symbol
+    df <- df[complete.cases(df$Gene), ]
+    return(df)
+}
+
+addMARBACH <- function(){
+#   Use lists from tftargets to generate data frame of Marbach2016 results.
+    library(tftargets)
+    df <- data.frame(TF = names(Marbach2016),
+                     Gene = sapply(Marbach2016, function(x) paste(x, collapse = "; ")))
+    s <- strsplit(as.character(df$Gene), split = "; ")
+    df <- data.frame(TF = rep(df$TF, sapply(s, length)), Gene = unlist(s))
+    return(df)
 }
 
 convertName <- function(df){
@@ -86,7 +137,7 @@ fitGLM <- function(methy, expression, annotation, trans){
     for(i in 1:nrow(expression)){
         # Gene expression
         y <- expression[i, , drop = F]
-        # Add transcription factor name(s) 
+        # Add transcription factor name(s)
         z <- as.character(trans$TF[trans$Gene == rownames(y)])
         z <- c(rownames(y), z)
         CpG <- as.character(annotation[annotation$Gene_Name %in% z,1])

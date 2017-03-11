@@ -21,7 +21,7 @@ rlist[annot, tf] <- readAnnot()
 library(foreach)
 library(doMC)
 registerDoMC(10)
-for (i in seq_along(projects)){
+foreach (i = seq_along(projects)) %dopar% {
 #   Different tumor types
     print(paste0("Working on project: ", projects[i]))
     load(methyFiles[i])
