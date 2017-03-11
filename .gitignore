@@ -1,1 +1,4 @@
 *.Rhistory
+*.genes
+*.bed
+*.tgz
