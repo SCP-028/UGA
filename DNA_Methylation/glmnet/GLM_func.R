@@ -35,7 +35,6 @@ readAnnot <- function(methyPath="./glmnet_TF/annot_removed.csv",
     tf$PMID <- NULL
     tf <- tf[tf$Gene %in% annot$Gene_Name, ]
     tf <- tf[tf$TF %in% annot$Gene_Name, ]
-    # TODO: aggregate TF name and Interaction
     return(list(annot, tf))
 }
 
@@ -267,6 +266,7 @@ calcGroup <- function(result, resultdf, predictor, annotation){
         x <- annot[annot$IlmnID %in% cpg[[i]], ]
         x <- x[x$Gene_Name %in% getGenelist(names(cpg)[i], resultdf), ]
         x$Gene_Group[x$Gene_Name != names(cpg)[i]] <- "TFmethy"
+        x <- x[!duplicated(x[ ,c("IlmnID", "Gene_Name")]), ]
         df[i, ] <- t(as.matrix(summary(x$Gene_Group)))
     }
     df <- merge(result, df, by = "row.names", all.x = T)
@@ -280,13 +280,87 @@ detailSummary <- function(GLMlist, predictor, resultdf,
 #   resultdf is for less computation,
 #   annot and trans are annotation files.
     result <- buildDf(row.num = length(GLMlist), col.num = 4)
-    colnames(result) <- c("gene_symbol", "coef2_CpG", "coef2_%dev",
-                          "coef2_lambda")
+    colnames(result) <- c("gene_symbol",
+                          paste0("coef", predictor, "_CpG"),
+                          paste0("coef", predictor, "_%dev"),
+                          paste0("coef", predictor, "_lambda"))
     rownames(result) <- result$gene_symbol <- names(GLMlist)
-    result$"coef2_%dev" <- resultdf$"coef2_%dev"
-    result$coef2_lambda <- resultdf$coef2_lambda
-    result$coef2_CpG <- getCpG(GLMlist, predictor, resultdf)
+    result[ ,3] <- resultdf[ ,paste0("coef", predictor, "_%dev")]
+    result[ ,4] <- resultdf[ ,paste0("coef", predictor, "_lambda")]
+    result[ ,2] <- getCpG(GLMlist, predictor, resultdf)
     result <- calcGroup(result, resultdf, predictor, annotation)
     result$Row.names <- NULL
     return(result)
+}
+
+finalGroup <- function(filepath, minDev = 0, existTF = F){
+#   Count all results' methylation groups.
+    library(dplyr)
+    filepaths <- list.files(filepath, pattern = "GLM\\.RData$",
+                            full.names = T)
+    filenames <- list.files(filepath, pattern = "GLM\\.RData$")
+    cancer_type <- vector("character", 672)  # 12 cancer types
+    sample_type <- rep(c(rep("normal", 28), rep("tumor", 28)), 12)
+    coef_num <- rep(c(rep(2, 7), rep(3, 7), rep(4, 7), rep(5, 7)), 24)
+    methy_group <- rep(c("1stExon", "3'UTR", "5'UTR", "Body", "TSS1500",
+                         "TSS200", "TFmethy"), 96)
+    group_count <- vector("numeric", 672)
+    for (i in seq_along(filenames)){
+        load(filepaths[i])
+        cancer_type[(28*i-27):(28*i)] <- sub("(^\\w{4}).*", "\\1", filenames[i])
+        if (existTF){
+            geneName <- results %>% filter(transcription_factor != "") %>% select(gene_symbol)
+            geneName <- as.character(geneName$gene_symbol)
+            group_count[(28*i-27):(28*i-21)] <- colSums(coef2 %>% 
+                                                            filter(gene_symbol %in% geneName) %>% 
+                                                            filter(`coef2_%dev` >= minDev) %>%
+                                                            select(-contains("_")),
+                                                        na.rm = T)
+            group_count[(28*i-20):(28*i-14)] <- colSums(coef3 %>% 
+                                                            filter(gene_symbol %in% geneName) %>% 
+                                                            filter(`coef3_%dev` >= minDev) %>%
+                                                            select(-contains("_")),
+                                                        na.rm = T)
+            group_count[(28*i-13):(28*i-7)] <- colSums(coef4 %>% 
+                                                            filter(gene_symbol %in% geneName) %>% 
+                                                            filter(`coef4_%dev` >= minDev) %>%
+                                                            select(-contains("_")),
+                                                        na.rm = T)
+            group_count[(28*i-6):(28*i)] <- colSums(coef5 %>% 
+                                                            filter(gene_symbol %in% geneName) %>% 
+                                                            filter(`coef5_%dev` >= minDev) %>%
+                                                            select(-contains("_")),
+                                                        na.rm = T)
+        }
+        else{
+            group_count[(28*i-27):(28*i-21)] <- colSums(coef2 %>%
+                                                            filter(`coef2_%dev` >= minDev) %>%
+                                                            select(-contains("_")),
+                                                        na.rm = T)
+            group_count[(28*i-20):(28*i-14)] <- colSums(coef3 %>%
+                                                            filter(`coef3_%dev` >= minDev) %>%
+                                                            select(-contains("_")),
+                                                        na.rm = T)
+            group_count[(28*i-13):(28*i-7)] <- colSums(coef4 %>%
+                                                            filter(`coef4_%dev` >= minDev) %>%
+                                                            select(-contains("_")),
+                                                        na.rm = T)
+            group_count[(28*i-6):(28*i)] <- colSums(coef5 %>%
+                                                            filter(`coef5_%dev` >= minDev) %>%
+                                                            select(-contains("_")),
+                                                        na.rm = T)
+        }
+    }
+    result <- data.frame(cancer_type, sample_type, coef_num, methy_group,
+                         group_count)
+    return(result)
+}
+
+plotFig <- function(df, filename){
+#   Barplot to get a general picture of the distribution of the data.
+    library(ggplot2)
+    ggplot(df, aes(x=cancer_type, y=group_count))+
+    geom_bar(stat="identity", aes(fill=methy_group), position="dodge")+
+    facet_grid(coef_num~sample_type, labbller=label_both)
+    ggsave(filename, dpi = 200, width = 20, height = 45, units = "in")
 }
