@@ -1,3 +1,15 @@
+rlist <- structure(NA,class="result")
+"[<-.result" <- function(x,...,value) {
+   args <- as.list(match.call())
+   args <- args[-c(1:2,length(args))]
+   length(value) <- length(args)
+   for(i in seq(along=args)) {
+     a <- args[[i]]
+     if(!missing(a)) eval.parent(substitute(a <- v,list(a=a,v=value[[i]])))
+   }
+   x
+}
+
 GSEA.EnrichmentScore2 <- function(gene.list, gene.set,
                                   t.stat, weighted.score.type) {
 #gene.list is the location 
@@ -48,14 +60,10 @@ GSEA.EnrichmentScore2 <- function(gene.list, gene.set,
 
 #load("/Users/shacao/errands/test_fenton_ribosome/pathways.list.GOMaco.CORUM.RCT.HGNC.Msigdb.RData")
 
-calc.gsea.1<-function(t.stat,weighted.score.type){
-    t.stat=t.stat[!is.na(t.stat)]
+calc.gsea.1<-function(t.stat, weighted.score.type){
     gene.labels=names(t.stat)
-
-    #pathways=sapply(pathways, function(x)x[-c(1:2)])
-    #pathways=pathways.list.GOMaco.CORUM.RCT.HGNC.Msigdb
     Ng <- length(pathways)
-    temp.size.G=sapply(pathways, function(x)length(x))
+    temp.size.G=sapply(pathways, function(x) length(x))
     max.size.G <- max(temp.size.G)
     gs <- matrix(rep("null", Ng*max.size.G),
                      nrow=Ng, ncol= max.size.G)
@@ -74,17 +82,14 @@ calc.gsea.1<-function(t.stat,weighted.score.type){
     Ng = nrow(gs.new)
 
     rows=length(t.stat)
-    nperm=5000
+    nperm=1000
     scores=vector("numeric",Ng)
     pvals=vector("numeric",Ng)
-    pval.indic=0
+    pval.indic=0  # Permutation test
 
     obs.gene.list2 <- order(t.stat,decreasing=TRUE)
     phi <- matrix(nrow = Ng, ncol = nperm)
     for (i in 1:Ng) {
-        if(i %%100==1) {
-            print(i)
-        }
         gene.set <- gs.new[i,gs.new[i,] != "null"]
         gene.set2 <- match(gene.set, gene.labels)
         if(pval.indic==1) {
@@ -116,4 +121,72 @@ calc.gsea.1<-function(t.stat,weighted.score.type){
     rownames(data.ES)=rownames(gs.new)
     #names(pvals)=rownames(gs.new)
     return(data.ES)
+}
+
+merge.result <- function(pathways, directory = "./"){
+    library(dplyr)
+    resultFiles <- list.files(directory, pattern = "\\.txt")
+    fileNames <- sub("(.*)\\.txt", "\\1", resultFiles)
+    resultFiles <- paste0("./", resultFiles)
+    df <- data.frame(annotation = names(pathways))
+    df$annotation <- as.character(df$annotation)
+    df <- df[!duplicated(df$annotation), , drop = F]
+    pb <- txtProgressBar(min = 0, max = length(resultFiles), style = 3, char = "#")
+    for (i in seq_along(resultFiles)){
+        temp <- data.table::fread(resultFiles[i], sep = " ",
+                                header = F, data.table = F)
+        temp$V3 <- NULL
+        colnames(temp) <- c("annotation", "ES")
+        temp$annotation <- as.character(temp$annotation)
+        temp <- temp[order(temp$annotation, decreasing = T), ]
+        temp <- temp[!duplicated(temp$annotation), ]
+        df <- left_join(df, temp, by = "annotation")
+        colnames(df)[ncol(df)] <- fileNames[i]
+        setTxtProgressBar(pb, i)
+        gc()
+    }
+    return(df)
+}
+
+extractR2 <- function(coef2, coef3, coef4, coef5, results,
+                      coef.num, valley.r2.value, only.tf = T){
+#   Extract %dev value from results dataframe, and corresponding gene symbols.
+    library(dplyr)
+    if (only.tf){
+        coefList <- list(coef2=coef2, coef3=coef3, coef4=coef4, coef5=coef5)
+        df <- coefList[[paste0("coef", coef.num)]]
+        coef.num <- paste0("coef", coef.num, "_%dev")
+        df <- df[ ,c("gene_symbol", coef.num, "TFmethy")]
+        colnames(df) <- c("gene_symbol", "r_squared", "TFmethy")
+        df <- df %>% 
+                filter(!is.na(r_squared)) %>%
+                filter(r_squared >= valley.r2.value) %>%
+                filter(TFmethy >= 2) %>%
+                select(gene_symbol, r_squared) %>%
+                arrange(-r_squared)
+    }
+    else {
+        coef.num <- paste0("coef", coef.num, "_%dev")
+            df <- results[ ,c("gene_symbol", coef.num)]
+            colnames(df) <- c("gene_symbol", "r_squared")
+            df <- df %>% 
+                    filter(!is.na(r_squared)) %>%
+                    filter(r_squared >= valley.r2.value) %>%
+                    arrange(-r_squared)
+    }
+
+    return(df)
+}
+
+getGenelist <- function(dirpath){
+#   Get gene list from gene expression data frames.
+    filename <- list.files(dirpath, pattern = "\\.RData", full.names = T)
+    gene.list <- character()
+    for (i in seq_along(filename)){
+        load(filename[i])
+        gene.list <- as.character(c(gene.list, 
+                                    rownames(datan), rownames(datat)))
+    }
+    gene.list <- gene.list[!duplicated(gene.list)]
+    return(gene.list)
 }

@@ -1,4 +1,5 @@
 rlist <- structure(NA,class="result")
+# Usage example: rlist[x, y] <- some.function.that.returns.2.values()
 "[<-.result" <- function(x,...,value) {
    args <- as.list(match.call())
    args <- args[-c(1:2,length(args))]
@@ -90,6 +91,7 @@ addMARBACH <- function(){
 
 convertName <- function(df){
 #   Convert expression df names from symbol|entrez to symbol
+#   df: gene expression data.frames
     library(mygene)
     library(dplyr)
     rownames(df) <- sub(".*\\|(\\d*)", "\\1", rownames(df))
@@ -131,8 +133,10 @@ fitGLM <- function(methy, expression, annotation, trans){
 #   methy and expression are 2 data.frames, and annotation and trans
 #   are the annotation files for matching CpG islands to genes, and 
 #   transcription factors to genes, respectively.
-    library(glmnet)
+    library(glmnet, quietly = T)
     GLMdata <- vector("list", nrow(expression))
+    # pb <- txtProgressBar(min = 0, max = nrow(expression),
+                         # char = "#", style = 3)
     for(i in 1:nrow(expression)){
         # Gene expression
         y <- expression[i, , drop = F]
@@ -151,6 +155,7 @@ fitGLM <- function(methy, expression, annotation, trans){
                        "GLM" = cv.glmnet(x,y, parallel = T))
             GLMdata[[i]] <- df
         }
+        # setTxtProgressBar(pb, i)
     }
     names(GLMdata) <- rownames(expression)
     GLMdata <- Filter(Negate(function(x) is.null(unlist(x))),
@@ -224,7 +229,7 @@ getSummary <- function(df){
 
 getCpG <- function(GLMlist, predictor, resultdf){
 #   get CpG islands' names (and groups)
-    library(glmnet)
+    library(glmnet, quietly = T)
     predictor <- paste0("coef", predictor, "_lambda")
     CpG.list <- vector("list", length(GLMlist))
     for (i in seq_along(CpG.list)){
@@ -240,7 +245,7 @@ getCpG <- function(GLMlist, predictor, resultdf){
             }
         }
     }
-    return(CpG.list)
+    return(as.character(CpG.list))
 }
 
 getGenelist <- function(genename, resultdf){
@@ -295,7 +300,9 @@ detailSummary <- function(GLMlist, predictor, resultdf,
 
 finalGroup <- function(filepath, minDev = 0, existTF = F){
 #   Count all results' methylation groups.
-    library(dplyr)
+#   minDev: minimum value of %dev, remove all values smaller than it.
+#   existTF: if TRUE, remove all genes that don't have a regulating TF.
+    library(dplyr, quietly = T)
     filepaths <- list.files(filepath, pattern = "GLM\\.RData$",
                             full.names = T)
     filenames <- list.files(filepath, pattern = "GLM\\.RData$")
@@ -309,10 +316,12 @@ finalGroup <- function(filepath, minDev = 0, existTF = F){
         load(filepaths[i])
         cancer_type[(28*i-27):(28*i)] <- sub("(^\\w{4}).*", "\\1", filenames[i])
         if (existTF){
-            geneName <- results %>% filter(transcription_factor != "") %>% select(gene_symbol)
+            geneName <- results %>%
+                            filter(transcription_factor != "") %>%
+                            select(gene_symbol)
             geneName <- as.character(geneName$gene_symbol)
             group_count[(28*i-27):(28*i-21)] <- colSums(coef2 %>% 
-                                                            filter(gene_symbol %in% geneName) %>% 
+                                                            filter(gene_symbol %in% geneName) %>%
                                                             filter(`coef2_%dev` >= minDev) %>%
                                                             select(-contains("_")),
                                                         na.rm = T)
@@ -358,9 +367,82 @@ finalGroup <- function(filepath, minDev = 0, existTF = F){
 
 plotFig <- function(df, filename){
 #   Barplot to get a general picture of the distribution of the data.
-    library(ggplot2)
+#   df: the output of function finalGroup.
+    library(ggplot2, quietly = T)
     ggplot(df, aes(x=cancer_type, y=group_count))+
     geom_bar(stat="identity", aes(fill=methy_group), position="dodge")+
     facet_grid(coef_num~sample_type, labbller=label_both)
     ggsave(filename, dpi = 200, width = 20, height = 45, units = "in")
+}
+
+retriveCoef <- function(GLM, df, minDev){
+#   Extract each gene's correlation coefficient (positive or negative)
+#   GLM is normalGLM or tumorGLM list
+#   df is coef2 - coef5 data.frame
+    library(dplyr, quietly = T)
+    library(glmnet, quietly = T)
+    df <- df[df[ ,grep("dev", colnames(df))] >= minDev, ]
+    x <- df %>%
+            filter(!is.na(gene_symbol)) %>%
+            select(gene_symbol, contains("lambda"))
+    x <- x[rowSums(is.na(x)) == 0, ]
+    x <- x[order(x$gene_symbol), ]
+    y <- x[ ,2]
+    GLM <- lapply(GLM, function(x) x$GLM$glmnet.fit)
+    GLM <- GLM[names(GLM) %in% x$gene_symbol]
+    GLM <- GLM[order(names(GLM))]
+    result <- vector("list", length(GLM))
+
+    # pb <- txtProgressBar(min = 0, max = length(GLM), char = "#", style = 3)
+    for (i in seq_along(GLM)){
+        temp <- as.matrix(coef(GLM[[i]], s = y[i]))
+        result[[i]] <- temp[(temp[ ,1] != 0) &
+                            (rownames(temp) != "(Intercept)"), ]
+        # setTxtProgressBar(pb,i)
+    }
+    names(result) <- names(GLM)
+    result <- Filter(Negate(function(x) is.null(unlist(x))), result)
+    return(result)
+}
+
+coefGroup <- function(coef.list, annot, coef.num){
+#   Determine which group the CpG island belongs to.
+#   coef.list: the output of function retriveCoef.
+    library(dplyr, quietly = T)
+    gene_symbol <- rep(names(coef.list), each = coef.num)
+    ilmnID <- lapply(coef.list, function(x) names(x))
+    ilmnID <- unlist(ilmnID)
+    names(ilmnID) <- gene_symbol
+    subAnnot <- annot %>%
+                select(IlmnID, Gene_Name, Gene_Group) %>%
+                filter(IlmnID %in% ilmnID)
+    coef_value <- unlist(coef.list)
+    methy_group <- vector("character", length(ilmnID))
+    # pb <- txtProgressBar(min = 0, max = length(ilmnID),
+                         # char = "#", style = 3)
+    for (i in seq_along(ilmnID)){
+        x <- subAnnot %>%
+                filter(IlmnID == ilmnID[i]) %>%
+                filter(Gene_Name == gene_symbol[i])
+        methy_group[i] <- ifelse(nrow(x) == 1,
+                                 as.character(x$Gene_Group), "TFmethy")
+        # setTxtProgressBar(pb, i)
+    }
+    result <- data.frame(gene_symbol=gene_symbol,
+                         ilmnID=ilmnID,
+                         methy_group=methy_group,
+                         coef_value=coef_value)
+    return(result)
+}
+
+coefDist <- function(df){
+#   See distribution of function coefGroup results.
+    library(ggplot2)
+    ggplot(df, aes(x=coef_value))+
+    geom_density(aes(group=methy_group, colour=methy_group,
+                     fill=methy_group),
+                 alpha=0.3)
+    # facet_grid(coef_num~sample_type, labbller=label_both)
+    # , filename
+    # ggsave(filename, dpi = 200, width = 20, height = 45, units = "in")
 }
