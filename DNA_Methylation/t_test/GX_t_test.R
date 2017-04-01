@@ -1,40 +1,40 @@
-load("~/data/DNA_Methylation/Methy_ZhouYi/RData/GX_Methy.RData")
-rm(compare,datan_hypo,datan_hyper,datat_hyper,datat_hypo,hyper,hypo,a)
-test_result <- matrix(nrow = nrow(gexpn),ncol = 4)# Create result matrix
-colnames(test_result) <- c("Normal","Cancer","p_t","Gene Expression")
-rownames(test_result) <- rownames(gexpn)
+try(setwd("C:/Users/jzhou/Desktop"))
+try(setwd("/lustre1/yz73026/array"))
+filenames <- list.files("./mergeData/")
+projects <- sub("\\.RData", "", filenames)
+OUTPUT <- paste0("./t_test/", projects, ".RData")
+filenames <- list.files("./mergeData", full.names = T)
 
-mean_n <- rowMeans(gexpn)
-mean_t <- rowMeans(gexpt)# Calculate row means for later comparison
-
-for(i in 1:nrow(gexpn))
-{
-	test_result[i,1] <- mean_n[i]
-	test_result[i,2] <- mean_t[i]	
-	Var <- var.test(gexpn[i,],gexpt[i,])$p.value
-	if(Var <= 0.05)
-	{
-		test_result[i,3] <- t.test(gexpn[i,],gexpt[i,],var.equal = F, paired = F)$p.value
-	}
-	else
-	{
-		test_result[i,3] <- t.test(gexpn[i,],gexpt[i,],var.equal = T, paired = F)$p.value
-	}
-	if(test_result[i,3] <= 0.05)
-	{
-		if(mean_t[i] > mean_n[i])
-		{
-			test_result[i,4] <- "up-regulated"
-		}
-		else
-		{
-			test_result[i,4] <- "down-regulated"
-		}
-	}
-	else
-	{
-		test_result[i,4] <- "-"
-	}
-	print(i/14240*100)
+library(foreach)
+library(doMC)
+registerDoMC(12)
+foreach (i = seq_along(projects)) %dopar% {
+    load(filenames[i])
+    df <- data.frame(gene_symbol=character(nrow(datan)),
+                     p_value=numeric(nrow(datan)),
+                     tumor_exp=factor(nrow(datan),
+                                      levels = c("down-regulated",
+                                                 "up-regulated",
+                                                 "insignificant")))
+    rm(methyn, methyt)
+    df$gene_symbol <- rownames(datan)
+    for (j in seq(nrow(datan))) {
+        result <- t.test(datan[j, ], datat[j, ])
+        names(result$estimate) <- NULL
+        df$p_value[j] <- result$p.value
+        if (result$p.value <= 0.05) {
+            if (result$estimate[1] > result$estimate[2]) {
+                df$tumor_exp[j] <- "down-regulated"
+            }
+            else {
+                df$tumor_exp[j] <- "up-regulated"
+            }
+        }
+        else {
+            df$tumor_exp[j] <- "insignificant"
+        }
+        
+    }
+    save(df, file = OUTPUT[i])
+    print(paste0("Finished project: ", project[i]))
 }
-write.csv(test_result,"/home/yi/data/DNA_Methylation/Methy_ZhouYi/GX_t_result.txt")

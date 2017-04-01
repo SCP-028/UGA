@@ -435,14 +435,20 @@ coefGroup <- function(coef.list, annot, coef.num){
     return(result)
 }
 
-coefDist <- function(df){
+coefDist <- function(df, filename){
 #   See distribution of function coefGroup results.
-    library(ggplot2)
+    library(ggplot2, quietly = T, warn.conflicts = F)
+    library(dplyr, quietly = T, warn.conflicts = F)
+    df$coef_value <- ifelse(df$coef_value > 0, "positive", "negative")
+    # colnames(df) <- c("coef_value", "methy_group", "coef_num", "freq")
+    # df1 <- df %>% filter(coef_value == "positive") %>% select(freq)
+    # df2 <- df %>% filter(coef_value == "negative") %>% select(freq)
+    # neg.ratio <- df2$freq / (df1$freq + df2$freq)
+    # df <- df %>% select(-freq, -coef_value)
+    # df <- df[!duplicated(df), ]
+    # df$neg_ratio <- neg.ratio
     ggplot(df, aes(x=coef_value))+
-    geom_density(aes(group=methy_group, colour=methy_group,
-                     fill=methy_group),
-                 alpha=0.3)
-    # facet_grid(coef_num~sample_type, labbller=label_both)
-    # , filename
-    # ggsave(filename, dpi = 200, width = 20, height = 45, units = "in")
+    geom_bar(aes(color=methy_group, fill=methy_group), position = "dodge")+
+    facet_grid(coef_num~cancer_type)
+    ggsave(filename, dpi = 200, width = 20, height = 12, units = "in")
 }
