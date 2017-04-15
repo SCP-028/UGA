@@ -448,7 +448,7 @@ coefDist <- function(df, filename){
     # df <- df[!duplicated(df), ]
     # df$neg_ratio <- neg.ratio
     ggplot(df, aes(x=coef_value))+
-    geom_bar(aes(color=methy_group, fill=methy_group), position = "dodge")+
-    facet_grid(coef_num~cancer_type)
+    geom_bar(width = 0.5)+
+    facet_wrap(coef_num~cancer_type, scales = "free")+
     ggsave(filename, dpi = 200, width = 20, height = 12, units = "in")
 }

@@ -2,7 +2,7 @@ try(setwd("C:/Users/jzhou/Desktop"))
 try(setwd("/lustre1/yz73026/array"))
 filenames <- list.files("./mergeData/")
 projects <- sub("\\.RData", "", filenames)
-OUTPUT <- paste0("./t_test/", projects, ".RData")
+OUTPUT <- paste0("./t_test_expression/", projects, ".RData")
 filenames <- list.files("./mergeData", full.names = T)
 
 library(foreach)
@@ -36,5 +36,5 @@ foreach (i = seq_along(projects)) %dopar% {
         
     }
     save(df, file = OUTPUT[i])
-    print(paste0("Finished project: ", project[i]))
+    print(paste0("Finished project: ", projects[i]))
 }
