@@ -1,0 +1,6 @@
+## 2017/04/21
+- Cancer occurrence rate of an organ may correlate with the concentration of iron in that organ
+    - Need data of normal samples, not cancer ones
+    - [ ] Iron concentration data
+    - [X] Cancer occurence data
+
