@@ -123,11 +123,17 @@ cleanIsoform <- function(df, annot) {
 methyIsoform <- function(methy, isoform, annot) {
     colnames(methy) <- sub("(TCGA)-(..)-(\\w{4}).*",
                            "\\1_\\2_\\3",colnames(methy))
+<<<<<<< HEAD
     methy <- as.data.frame(methy)
     isoform <- as.data.frame(isoform)
     methy <- methy[complete.cases(methy), ]
     isoform <- isoform[complete.cases(isoform), ]
     methy <- methy[ ,colnames(methy) %in% colnames(isoform)]
+=======
+    methy <- methy[complete.cases(methy), ]
+    isoform <- isoform[complete.cases(isoform), ]
+    methy <- methy[ ,colnames(methy) %in% colnames(expression)]
+>>>>>>> bd8b3532e754da2200e0b6d48631d1291bcdb873
     methy <- methy[rownames(methy) %in% annot$IlmnID, ]
     methy <- methy[ ,!duplicated(colnames(methy))]
     methy <- methy[ ,order(colnames(methy))]

@@ -61,11 +61,19 @@ foreach (i = seq_along(projects)) %dopar% {
         methyt <- datat
         load(isoform_files[i])
         if (!is.null(datan) & !is.null(datat)) {
+<<<<<<< HEAD
             datan <- cleanIsoform(datan, annot)
             datat <- cleanIsoform(datat, annot)
             ## Pair methylation and isoform data
             rlist[methyn, datan] <- methyIsoform(methyn, datan, annot)
             rlist[methyt, datat] <- methyIsoform(methyt, datat, annot)
+=======
+            datan <- cleanIsoform(datan)
+            datat <- cleanIsoform(datat)
+            ## Pair methylation and isoform data
+            rlist[methyn, datan] <- methyIsoform(methyn, datan)
+            rlist[methyt, datat] <- methyIsoform(methyt, datat)
+>>>>>>> bd8b3532e754da2200e0b6d48631d1291bcdb873
             ## Separate cases into different stages / grades
             normalGLM <- list()
             for (j in seq_along(stages)) {
