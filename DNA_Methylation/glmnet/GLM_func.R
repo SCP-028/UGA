@@ -25,7 +25,7 @@ readAnnot <- function(methyPath="./glmnet_TF/annot_removed.csv",
                      tfPath="./glmnet_TF/trrust_rawdata.txt"){
 #   Add transcription factor info to annotation file, and
 #   clean duplicated records.
-    library(dplyr, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(dplyr))
     # Read annotation files
     annot <- read.csv(methyPath, header=T, sep="\t")
     tf <- read.csv(tfPath, header=T, sep="\t")
@@ -65,8 +65,8 @@ addNEPH <- function(filePath = "./Neph2012/"){
 
 addENCODE <- function(){
 #   Use lists from tftargets to generate data frame of ENCODE results.
-    library(tftargets, quietly = T, warn.conflicts = F)
-    library(mygene, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(tftargets))
+    suppressPackageStartupMessages(library(mygene))
     df <- data.frame(TF = names(ENCODE),
                      Gene = sapply(ENCODE, function(x) paste(x, collapse = "; ")))
     s <- strsplit(as.character(df$Gene), split = "; ")
@@ -82,7 +82,7 @@ addENCODE <- function(){
 
 addMARBACH <- function(){
 #   Use lists from tftargets to generate data frame of Marbach2016 results.
-    library(tftargets, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(tftargets))
     df <- data.frame(TF = names(Marbach2016),
                      Gene = sapply(Marbach2016, function(x) paste(x, collapse = "; ")))
     s <- strsplit(as.character(df$Gene), split = "; ")
@@ -93,8 +93,8 @@ addMARBACH <- function(){
 convertName <- function(df){
 #   Convert expression df names from symbol|entrez to symbol
 #   df: gene expression data.frames
-    library(mygene, quietly = T, warn.conflicts = F)
-    library(dplyr, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(mygene))
+    suppressPackageStartupMessages(library(dplyr))
     rownames(df) <- sub(".*\\|(\\d*)", "\\1", rownames(df))
     temp <- as.data.frame(queryMany(rownames(df),
                                     scopes = "entrezgene",
@@ -114,7 +114,7 @@ convertName <- function(df){
 cleanIsoform <- function(df, annot) {
     df <- as.data.frame(df)
     ## Remove rows with too many 0s
-    df <- df[rowSums(df == 0) <= 0.6 * ncol(df), ]
+    df <- df[rowSums(df == 0) <= 0.2 * ncol(df), ]  # More than 80% non-zero
     ## Unify gene symbol
     df <- df[sub("\\|.*", "", rownames(df)) %in% annot$Gene_Name, ]
     return(df)
@@ -123,23 +123,17 @@ cleanIsoform <- function(df, annot) {
 methyIsoform <- function(methy, isoform, annot) {
     colnames(methy) <- sub("(TCGA)-(..)-(\\w{4}).*",
                            "\\1_\\2_\\3",colnames(methy))
-<<<<<<< HEAD
     methy <- as.data.frame(methy)
     isoform <- as.data.frame(isoform)
     methy <- methy[complete.cases(methy), ]
     isoform <- isoform[complete.cases(isoform), ]
     methy <- methy[ ,colnames(methy) %in% colnames(isoform)]
-=======
-    methy <- methy[complete.cases(methy), ]
-    isoform <- isoform[complete.cases(isoform), ]
-    methy <- methy[ ,colnames(methy) %in% colnames(expression)]
->>>>>>> bd8b3532e754da2200e0b6d48631d1291bcdb873
     methy <- methy[rownames(methy) %in% annot$IlmnID, ]
     methy <- methy[ ,!duplicated(colnames(methy))]
     methy <- methy[ ,order(colnames(methy))]
     isoform <- isoform[ ,colnames(isoform) %in% colnames(methy)]
-    isoform <- isoform[sub("\\|.*", "", rownames(isoform)) %in% 
-                       annot$Gene_Name, ]
+    isoform <- isoform[ ,order(colnames(isoform))]
+    methy <- methy[ ,colnames(methy) %in% colnames(isoform)]
     return(list(methy, isoform))
 }
 
@@ -166,27 +160,33 @@ fitGLM <- function(methy, expression, annotation, trans){
 #   methy and expression are 2 data.frames, and annotation and trans
 #   are the annotation files for matching CpG islands to genes, and 
 #   transcription factors to genes, respectively.
-    library(glmnet, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(glmnet))
+    suppressPackageStartupMessages(library(dplyr))
+    suppressPackageStartupMessages(library(data.table))
+    annotation <- annotation %>% mutate_if(is.factor, as.character)
+    trans <- trans %>% mutate_if(is.factor, as.character)
+    annotation <- as.data.table(annotation)
     GLMdata <- vector("list", nrow(expression))
+    tf_list <- lapply(rownames(y), function(x) as.character(trans$TF[trans$Gene == x]))  # Add transcription factor name(s)
+    CpG_list <- Map(c, rownames(y), tf_list)
+    CpG_list <- lapply(CpG_list, function(x) annotation[Gene_Name %in% unlist(x, use.names = F), IlmnID])
     # pb <- txtProgressBar(min = 0, max = nrow(expression),
                          # char = "#", style = 3)
     for(i in 1:nrow(expression)){
         # Gene expression
         y <- expression[i, , drop = F]
-        # Add transcription factor name(s)
-        z <- as.character(trans$TF[trans$Gene == rownames(y)])
-        z <- c(rownames(y), z)
-        CpG <- as.character(annotation[annotation$Gene_Name %in% z,1])
-        x <- t(methy[rownames(methy) %in% CpG, , drop = F])
+        x <- t(methy[rownames(methy) %in% CpG_list[[i]], , drop = F])
         if (is.null(dim(x)) | ncol(x) <= 1){
             next
         }
         else {
-            df <- list("Gene" = rownames(y),
-                       "TF" = z[z != rownames(y)],
-                       "CpG site" = CpG,
-                       "GLM" = cv.glmnet(x,y, parallel = T))
-            GLMdata[[i]] <- df
+            tryCatch(GLMdata[[i]] <- list("Gene" = rownames(y),
+                       "TF" = tf_list[[i]],
+                       "CpG site" = CpG_list[[i]],
+                       "GLM" = suppressWarnings(cv.glmnet(x,y))),
+                    error = function(e) e,
+                    finally = next
+            )
         }
         # setTxtProgressBar(pb, i)
     }
@@ -227,7 +227,6 @@ extractCoef <- function(df, predictor = 2){
     # predictor num, %dev, and lambda
     df <- lapply(df, function(x) cbind(x$df, x$dev.ratio, x$lambda))
     df <- lapply(df, function(x) x[x[ ,1] == predictor, , drop = F])
-    df <- lapply(df, function(x) as.data.frame(x))
     resultdf <- data.frame(matrix(nrow = length(df), ncol = 2))
     for (i in seq_along(df)){
         temp <- df[[i]]
@@ -262,7 +261,7 @@ getSummary <- function(df){
 
 getCpG <- function(GLMlist, predictor, resultdf){
 #   get CpG islands' names (and groups)
-    library(glmnet, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(glmnet))
     predictor <- paste0("coef", predictor, "_lambda")
     CpG.list <- vector("list", length(GLMlist))
     for (i in seq_along(CpG.list)){
@@ -272,8 +271,8 @@ getCpG <- function(GLMlist, predictor, resultdf){
             temp <- as.matrix(coef(GLMlist[[i]]$GLM,
                               s = tempLambda))
             if (ncol(temp) != 0){
-                temp <- names(temp[temp[ ,1] != 0, ])
-                temp <- temp[temp != "(Intercept)"]
+                temp <- names(temp[temp[ ,1] != 0, ])[-1]
+                # temp <- temp[temp != "(Intercept)"]
                 CpG.list[i] <- paste(temp, collapse = ";")
             }
         }
@@ -289,11 +288,12 @@ getGenelist <- function(genename, resultdf){
     return(x)
 }
 
-calcGroup <- function(result, resultdf, predictor, annotation){
+calcGroup <- function(result, resultdf, predictor, annot){
 #   Calculate methylation groups for predictors.
+    annot <- as.data.table(annot)
     predictor <- paste0("coef", predictor, "_CpG")
     cpg <- result[ ,2]
-    names(cpg) <- result$gene_symbol
+    names(cpg) <- rownames(result)
     cpg <- unlist(cpg, recursive = F)
     cpg <- lapply(cpg, function(x) unlist(strsplit(x, ";")))
     df <- buildDf(row.num = length(cpg), col.num = 7)
@@ -301,18 +301,16 @@ calcGroup <- function(result, resultdf, predictor, annotation){
                       "TSS200", "TFmethy")
     rownames(df) <- names(cpg)
     for (i in seq_along(cpg)){
-        x <- annot[annot$IlmnID %in% cpg[[i]], ]
-        x <- x[x$Gene_Name %in% getGenelist(names(cpg)[i], resultdf), ]
+        x <- annot[IlmnID %in% cpg[[i]] & Gene_Name %in% getGenelist(names(cpg)[i], resultdf), ]
         x$Gene_Group[x$Gene_Name != names(cpg)[i]] <- "TFmethy"
         x <- x[!duplicated(x[ ,c("IlmnID", "Gene_Name")]), ]
-        df[i, ] <- t(as.matrix(summary(x$Gene_Group)))
+        df[i, ] <- t(summary(x$Gene_Group))
     }
     df <- merge(result, df, by = "row.names", all.x = T)
     return(df)
 }
 
-detailSummary <- function(GLMlist, predictor, resultdf,
-                          annotation, transAnnot){
+detailSummary <- function(GLMlist, predictor, resultdf, annotation){
 #   GLMlist is normalGLM or tumorGLM, used to extract coef and other info,
 #   predictor is a number between 2 and 5,
 #   resultdf is for less computation,
@@ -335,7 +333,7 @@ finalGroup <- function(filepath, minDev = 0, existTF = F){
 #   Count all results' methylation groups.
 #   minDev: minimum value of %dev, remove all values smaller than it.
 #   existTF: if TRUE, remove all genes that don't have a regulating TF.
-    library(dplyr, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(dplyr))
     filepaths <- list.files(filepath, pattern = "GLM\\.RData$",
                             full.names = T)
     filenames <- list.files(filepath, pattern = "GLM\\.RData$")
@@ -401,7 +399,7 @@ finalGroup <- function(filepath, minDev = 0, existTF = F){
 plotFig <- function(df, filename){
 #   Barplot to get a general picture of the distribution of the data.
 #   df: the output of function finalGroup.
-    library(ggplot2, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(ggplot2))
     ggplot(df, aes(x=cancer_type, y=group_count))+
     geom_bar(stat="identity", aes(fill=methy_group), position="dodge")+
     facet_grid(coef_num~sample_type, labbller=label_both)
@@ -412,8 +410,8 @@ retriveCoef <- function(GLM, df, minDev){
 #   Extract each gene's correlation coefficient (positive or negative)
 #   GLM is normalGLM or tumorGLM list
 #   df is coef2 - coef5 data.frame
-    library(dplyr, quietly = T, warn.conflicts = F)
-    library(glmnet, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(dplyr))
+    suppressPackageStartupMessages(library(glmnet))
     df <- df[df[ ,grep("dev", colnames(df))] >= minDev, ]
     x <- df %>%
             filter(!is.na(gene_symbol)) %>%
@@ -441,7 +439,7 @@ retriveCoef <- function(GLM, df, minDev){
 coefGroup <- function(coef.list, annot, coef.num){
 #   Determine which group the CpG island belongs to.
 #   coef.list: the output of function retriveCoef.
-    library(dplyr, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(dplyr))
     gene_symbol <- rep(names(coef.list), each = coef.num)
     ilmnID <- lapply(coef.list, function(x) names(x))
     ilmnID <- unlist(ilmnID)
@@ -470,8 +468,8 @@ coefGroup <- function(coef.list, annot, coef.num){
 
 coefDist <- function(df, filename){
 #   See distribution of function coefGroup results.
-    library(ggplot2, quietly = T, warn.conflicts = F)
-    library(dplyr, quietly = T, warn.conflicts = F)
+    suppressPackageStartupMessages(library(ggplot2))
+    suppressPackageStartupMessages(library(dplyr))
     df$coef_value <- ifelse(df$coef_value > 0, "positive", "negative")
     # colnames(df) <- c("coef_value", "methy_group", "coef_num", "freq")
     # df1 <- df %>% filter(coef_value == "positive") %>% select(freq)

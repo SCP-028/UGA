@@ -3,3 +3,4 @@
 *.bed
 *.tgz
 DNA_Methylation/.RData
+.vscode/
