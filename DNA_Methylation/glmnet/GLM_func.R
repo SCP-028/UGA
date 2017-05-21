@@ -300,11 +300,12 @@ calcGroup <- function(result, resultdf, predictor, annot){
     colnames(df) <- c("1stExon", "3'UTR", "5'UTR", "Body", "TSS1500",
                       "TSS200", "TFmethy")
     rownames(df) <- names(cpg)
+    temp <- sub("\\|.*$", "", names(cpg))
     for (i in seq_along(cpg)){
         x <- annot[IlmnID %in% cpg[[i]] & Gene_Name %in% getGenelist(names(cpg)[i], resultdf), ]
-        x$Gene_Group[x$Gene_Name != names(cpg)[i]] <- "TFmethy"
+        x$Gene_Group[x$Gene_Name != temp[i]] <- "TFmethy"
         x <- x[!duplicated(x[ ,c("IlmnID", "Gene_Name")]), ]
-        df[i, ] <- t(summary(x$Gene_Group))
+        df[i, ] <- t(table(x$Gene_Group))
     }
     df <- merge(result, df, by = "row.names", all.x = T)
     return(df)
