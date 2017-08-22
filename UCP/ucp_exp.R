@@ -1,3 +1,4 @@
+## Heatmap of average expression.
 firstCol <- function(df) {
     df <- df[ ,1:2]
     # colnames(df) <- c("Samples", funcName(df))
