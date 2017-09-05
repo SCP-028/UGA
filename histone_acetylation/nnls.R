@@ -10,6 +10,7 @@ file_name <- list.files("./expression/", pattern="RData$")
 projects <- sub("(.*)\\.up.*$", "\\1", file_name)
 results <- vector("list", length = (length(projects) * 2))
 names(results) <- as.vector(outer(projects, c("_normal", "_tumor"), paste0))
+names(results) <- names(results)[order(names(results))]
 
 
 gen.regex <- function(gene_name, ...) {
@@ -49,7 +50,7 @@ build.nnls <- function(gen.df, con.df) {
 
 # Constants
 generate_name <- gen.regex("ACLY","ACSS2")
-consume_name <- gen.regex("ACC1", "ACC2", "HMGR", "ACOT1", "ACOT7", "ACOT11", "ACOT12", "ACOT13", "CREBBP", "EP300", "KAT2B", "KAT5", "NCOA1", "NCOA3")
+consume_name <- gen.regex("ACACA", "ACACB", "HMGCR", "ACOT1", "ACOT7", "ACOT11", "ACOT12", "ACOT13", "CREBBP", "EP300", "KAT2B", "KAT5", "NCOA1", "NCOA3")
 
 
 for (i in seq_along(projects)) {
@@ -74,5 +75,5 @@ for (i in seq_along(results)) {
     coef.df <- full_join(coef.df, x, by = "symbol")
 }
 
-save(results, coef.df, file="./nnls_models.RData")
+save(results, coef.df, file="./nnls_mitochondrial.RData")
 
