@@ -9,7 +9,7 @@ library(dplyr)
 file_name <- list.files("./expression/", pattern="RData$")
 projects <- sub("(.*)\\.up.*$", "\\1", file_name)
 results <- vector("list", length = (length(projects) * 2))
-names(results) <- as.vector(outer(projects, c("_normal", "_tumor"), paste0))
+names(results) <- projects
 names(results) <- names(results)[order(names(results))]
 
 
@@ -55,14 +55,14 @@ consume_name <- gen.regex("CS","ACOT2","ACOT9","ACOT10","ACOT13")
 
 for (i in seq_along(projects)) {
     load(paste0("./expression/", file_name[i]))
+    # colnames(datan) <- c(colnames(datan), "_normal")
+    # colnames(datat) <- c(colnames(datat), "_tumor")
+    data <- cbind.data.frame(datan, datat)
     # Get genes that are related to Ac-CoA
-    gen.normal <- retrieve.gene(datan, generate_name)
-    gen.tumor <- retrieve.gene(datat, generate_name)
-    con.normal <- retrieve.gene(datan, consume_name)
-    con.tumor <- retrieve.gene(datat, consume_name)
+    gen.genes <- retrieve.gene(data, generate_name)
+    con.genes <- retrieve.gene(data, consume_name)
     # Build non-negative least square linear models
-    results[[2*i-1]] <- build.nnls(gen.normal, con.normal)
-    results[[2*i]] <- build.nnls(gen.tumor, con.tumor)
+    results[[i]] <- build.nnls(gen.genes, con.genes)
 }
 
 # Merge coefficients into one data frame
@@ -75,5 +75,5 @@ for (i in seq_along(results)) {
     coef.df <- full_join(coef.df, x, by = "symbol")
 }
 
-save(results, coef.df, file="./nnls_mitochondrial.RData")
+save(results, coef.df, file="./nnls_cyt.RData")
 

@@ -23,7 +23,7 @@ for (i in seq_along(projects)) {
 
     coef.normal <- coef.df[ ,c(1, (2*i))]  # corresponding coefficients
     coef.normal <- coef.normal[rowSums(is.na(coef.normal)) == 0, ]  # remove NA
-    coef.normal <- rbind.data.frame(coef.normal, c(res.gene[i], 1))  # add LHS gene
+    coef.normal <- rbind.data.frame(coef.normal, c(res.gene[2*i-1], 1))  # add LHS gene
     coef.normal[ ,2] <- as.numeric(coef.normal[ ,2])
     coef.normal[coef.normal$symbol %in% results[[2*i-1]]$gen.genes, 2] <- -1 * coef.normal[coef.normal$symbol %in% results[[2*i-1]]$gen.genes, 2]
 
@@ -50,7 +50,7 @@ for (i in seq_along(projects)) {
 
     coef.tumor <- coef.df[ ,c(1, (2*i+1))]  # corresponding coefficients
     coef.tumor <- coef.tumor[rowSums(is.na(coef.tumor)) == 0, ]  # remove NA
-    coef.tumor <- rbind.data.frame(coef.tumor, c(res.gene[i], 1))  # add LHS gene
+    coef.tumor <- rbind.data.frame(coef.tumor, c(res.gene[2*i], 1))  # add LHS gene
     coef.tumor[ ,2] <- as.numeric(coef.tumor[ ,2])
     coef.tumor[coef.tumor$symbol %in% results[[2*i]]$gen.genes, 2] <- -1 * coef.tumor[coef.tumor$symbol %in% results[[2*i]]$gen.genes, 2]
 
@@ -71,3 +71,5 @@ for (i in seq_along(projects)) {
     res.tumor$symbol <- rownames(res.tumor)
     results.median <- full_join(results.median, res.tumor)
 }
+
+save(results.mean, results.median, file="./nnls_summary.RData")
