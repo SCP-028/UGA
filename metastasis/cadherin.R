@@ -45,7 +45,7 @@ for (i in seq_along(project)) {
         pltt <- nice.heatmap(dft, paste(project[i], "tumor samples", sep=" "))
         tiff(filename=paste0("../sialic_acid/", project[i], ".tiff"),
              width=16, height=9, units="in", res=200)
-        multiplot(dfn, dft, cols=2)
+        multiplot(pltn, pltt, cols=2)
         dev.off()
         message(paste0(project[i], " finished!"))
     }
