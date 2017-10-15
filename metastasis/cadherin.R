@@ -31,22 +31,24 @@ for (i in seq_along(project)) {
         dft <- name.convert(datat, ensAnnot,
                             regex = "(^P?CDH[AB]?\\d{1,2}$)|(^DSG[1234]$)")
         cadGenes <- exp.boxplot(dfn, dft, proj=project[i], ensAnnot, annot)
-        # Heatmap of cadherin ~ sialic acid genes
-        genelist <- c(sia.sia, sia.gal, sia.galnac,  # sialiac transferases
-                      siaP,  # sialic acid related proteins
-                      siaEnzy, sialidases,  # sialic acids synthesis & sialidases
-                      cadGenes)
-        genelist <- unique(genelist)
-        dfn <- name.convert(datan, ensAnnot, genelist=genelist)
-        dft <- name.convert(datat, ensAnnot, genelist=genelist)
-        dfn <- prep.cor.heatmap(dfn, genelist, sample="normal", cluster=F)
-        dft <- prep.cor.heatmap(dft, genelist, sample="tumor", cluster=F)
-        pltn <- nice.heatmap(dfn, paste(project[i], "normal samples", sep=" "))
-        pltt <- nice.heatmap(dft, paste(project[i], "tumor samples", sep=" "))
-        tiff(filename=paste0("../sialic_acid/", project[i], ".tiff"),
-             width=16, height=9, units="in", res=200)
-        multiplot(pltn, pltt, cols=2)
-        dev.off()
+        if (!is.null(cadGenes)) {
+          # Heatmap of cadherin ~ sialic acid genes
+          genelist <- c(sia.sia, sia.gal, sia.galnac,  # sialiac transferases
+                        siaP,  # sialic acid related proteins
+                        siaEnzy, sialidases,  # sialic acids synthesis & sialidases
+                        cadGenes)
+          genelist <- unique(genelist)
+          dfn <- name.convert(datan, ensAnnot, genelist=genelist)
+          dft <- name.convert(datat, ensAnnot, genelist=genelist)
+          dfn <- prep.cor.heatmap(dfn, genelist, sample="normal", cluster=F)
+          dft <- prep.cor.heatmap(dft, genelist, sample="tumor", cluster=F)
+          pltn <- nice.heatmap(dfn, paste(project[i], "normal samples", sep=" "))
+          pltt <- nice.heatmap(dft, paste(project[i], "tumor samples", sep=" "))
+          tiff(filename=paste0("../sialic_acid/", project[i], ".tiff"),
+               width=16, height=9, units="in", res=200)
+          multiplot(pltn, pltt, cols=2)
+          dev.off()
+        }
         message(paste0(project[i], " finished!"))
     }
 }
