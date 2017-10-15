@@ -207,7 +207,7 @@ nice.heatmap <- function(df, title) {
     #'
     #' @return A ggplot list.
     library(ggplot2)
-    ggplt <- ggplot(dfn, aes(Var1, Var2, fill=value))+
+    ggplt <- ggplot(df, aes(Var1, Var2, fill=value))+
              geom_tile(color="white")+
              ggtitle(title)+
              scale_fill_gradient2(low="#6D9EC1", high="#E46726", mid="white",
