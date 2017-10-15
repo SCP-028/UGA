@@ -1,6 +1,6 @@
 # Use data downloaded by `TCGA_expression_pipeline.py`
 # and generate DEG results using edgeR.
-# Is required for `classifier.py`.
+# Is required for `*classifier.py`.
 library(dplyr)
 if (!file.exists("./COAD_iv_i_iii.RData")) {
     # Follow steps in ecm_gene_de.R
@@ -10,7 +10,7 @@ if (!file.exists("./COAD_iv_i_iii.RData")) {
     df <- data.table::fread("./expression_count/COAD_tumor.csv",
                             data.table=F, header=T, sep="\t",
                             stringsAsFactors=F)
-    df <- name.convert(df)
+    df <- name.convert(df, description=T)
     symbolDescription <- cbind.data.frame(rownames(df), df$description)
     colnames(symbolDescription) <- c("symbol", "description")
     df$description <- NULL
