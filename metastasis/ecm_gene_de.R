@@ -25,7 +25,8 @@ annot <- read.csv("./expression_count/annotation/annot.tsv", header=T)
 annot <- annot[annot$project == "BRCA" & annot$sample_type == "tumor", ]
 
 # Separate stage i-iii and stage iv data
-dfCount <- name.convert(dfCount, genelist=GENELIST)
+ensAnnot <- retrieve.ensembAnnot(dfCount)
+dfCount <- name.convert(dfCount, ensAnnot, genelist=GENELIST, description=T)
 symbolDescription <- cbind.data.frame(rownames(dfCount), dfCount$description)
 colnames(symbolDescription) <- c("symbol", "description")
 dfCount$description <- NULL
@@ -43,7 +44,7 @@ dfFpkm <- data.table::fread("./expression_FPKM/BRCA_tumor.csv",
                              stringsAsFactors = F)
 
 # Convert gene name and stage info
-dfFpkm <- name.convert(dfFpkm, genelist=GENELIST)
+dfFpkm <- name.convert(dfFpkm, ensAnnot, genelist=GENELIST)
 dfFpkm_iv <- dfFpkm[ ,colnames(dfFpkm) %in% colnames(dfCount_iv)]
 dfFpkm_i_iii <- dfFpkm[ ,colnames(dfFpkm) %in% colnames(dfCount_i_iii)]
 dfFpkm_iv <- transform.for.plot(dfFpkm_iv, 'stage_iv')
