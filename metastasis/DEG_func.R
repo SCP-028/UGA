@@ -66,7 +66,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     }
     df$ensembl_gene_id <- ensembl
     df <- inner_join(ensemblAnnot, df, by = "ensembl_gene_id")
-    df <- df[order(rowSums(df[ ,4:ncol(df)]), decreasing=T), ]
+    df <- df[order(rowSums(df[ ,grep("TCGA", colnames(df))]), decreasing=T), ]
     df <- df[!duplicated(df$hgnc_symbol), ]
     rownames(df) <- df$hgnc_symbol
     df$hgnc_symbol <- NULL
@@ -74,7 +74,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
         return(df)
     }
     else {
-        return(df[ ,3:ncol(df)])
+        return(df[ ,grep("TCGA", colnames(df)])
     }
 }
 
