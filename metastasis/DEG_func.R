@@ -31,7 +31,8 @@ retrieve.ensembAnnot <- function(df, codingOnly=F) {
 
 
 name.convert <- function(df, ensemblAnnot, codingOnly=F,
-                         regex='', genelist='', description=F) {
+                         regex='', genelist='', description=F,
+                         libSize=F) {
     #' Convert ensembl to gene symbol.
     #'
     #' Require dplyr to work (uses inner_join function).
@@ -42,6 +43,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     #' @param regex The regular expression for extracting genes of interest.
     #' @param genelist The gene symbols of genes of interest.
     #' @param description Whether to keep description & ensembl of genes.
+    #' @param libSize Keep library size for DEG test or not.
     #'
     #' @return A data.frame df with its rownames converted.
     library(dplyr)
@@ -51,6 +53,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
         df$ensembl <- NULL
     }
     ensembl <- sub("(.*)\\..*$", "\\1", rownames(df))
+    library_size <- colSums(df)
     # get collagen gene names
     if (regex != '') {
         message("Regex found, filtering...")
@@ -70,11 +73,21 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     df <- df[!duplicated(df$hgnc_symbol), ]
     rownames(df) <- df$hgnc_symbol
     df$hgnc_symbol <- NULL
-    if (description) {
-        return(df)
+    if (libSize) {
+        if (description) {
+            return(list(df, library_size))
+        }
+        else {
+            return(list(df[ ,grep("TCGA", colnames(df))], library_size))
+        }
     }
     else {
-        return(df[ ,grep("TCGA", colnames(df)])
+        if (description) {
+            return(df)
+        }
+        else {
+            return(df[ ,grep("TCGA", colnames(df))])
+        }
     }
 }
 
@@ -275,17 +288,19 @@ multiplot <- function(..., plotlist=NULL, cols=1, layout=NULL) {
 }
 
 
-edgeR.de.test <- function(df1, df2) {
+edgeR.de.test <- function(df1, df2, group1, group2) {
     #' Use edgeR to perform gene differential expression analysis.
     #'
     #' Require edgeR and dplyr to work.
     #' 
     #' @param df1 First data frame / matrix. Must be counts value!!
     #' @param df2 Second. The result comes as df2:df1.
+    #' @param group1 Name of first group.
+    #' @param group2 Name of second group.
     library(edgeR)
     df1 <- df1[order(rownames(df1)), ]
     df2 <- df2[order(rownames(df2)), ]
-    group <- c(rep("i_iii", ncol(df1)), rep("iv", ncol(df2)))
+    group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
     design <- model.matrix(~0+group)
     x <- cbind(df1, df2)
     y <- DGEList(counts=x, group=group)
@@ -295,7 +310,7 @@ edgeR.de.test <- function(df1, df2) {
     ## logFC logCPM PValue
     et <- exactTest(y)$table
     colnames(et) <- c("log2_fold_change", "log2_CPM", "p_value")
-    et$symbol <- rownames(et)
+    et$ensembl <- rownames(et)
     rownames(et) <- NULL
     return(et)
 }
