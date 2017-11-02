@@ -3,6 +3,7 @@
 # Plot FPKM values into a heatmap
 try(setwd("C:/Users/jzhou/Desktop/expression_count"), silent=T)
 try(setwd("/home/yizhou/data/expression_count"), silent=T)
+source("../DEG_func.R")  # edgeR.de.test, retrieve.ensembAnnot
 ## Get DEGs of the sialic acid & cadherin genes in triple negative BRCA
 negAnnot <- data.table::fread("../annotation/triple_negative.csv", data.table = F,
                            stringsAsFactors = F, skip = 1, header = T)
@@ -26,66 +27,6 @@ genelist <- data.frame(symbol=c(sia.sia, sia.gal, sia.galnac,  # sialiac transfe
                                   rep("sialidase", length(sialidases)),
                                   rep("cadherin", length(cadGenes))))
 genelist <- genelist[!duplicated(genelist$symbol), ]
-
-
-edgeR.de.test <- function(df1, df2, group1, group2) {
-    #' Use edgeR to perform gene differential expression analysis.
-    #'
-    #' Require edgeR and dplyr to work.
-    #' 
-    #' @param df1 First data frame / matrix. Must be counts value!!
-    #' @param df2 Second. The result comes as df2:df1.
-    #' @param group1 Name of first group.
-    #' @param group2 Name of second group.
-    library(edgeR)
-    df1 <- df1[order(rownames(df1)), ]
-    df2 <- df2[order(rownames(df2)), ]
-    group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
-    design <- model.matrix(~0+group)
-    x <- cbind(df1, df2)
-    y <- DGEList(counts=x, group=group)
-    y <- y[rowSums(cpm(y) > 1) >= 2, , keep.lib.sizes=F]
-    y <- calcNormFactors(y)
-    y <- estimateDisp(y, design=design)
-    ## logFC logCPM PValue
-    et <- exactTest(y)$table
-    colnames(et) <- c("log2_fold_change", "log2_CPM", "p_value")
-    et$ensembl <- rownames(et)
-    rownames(et) <- NULL
-    return(et)
-}
-
-
-retrieve.ensembAnnot <- function(df, codingOnly=F) {
-    #' Prepare for converting ensembl to gene symbol.
-    #'
-    #' Require biomaRt to work (retrieve annotation).
-    #'  
-    #' @param df The data frame whose rownames are to be converted.
-    #' @param codingOnly Keep only the protein-coding genes and ditch the rest.
-    #'
-    #' @return A data.frame of matching ensembl IDs and symbols.
-    library(biomaRt)
-
-    if ("ensembl" %in% colnames(df)) {
-        rownames(df) <- as.character(df$ensembl)
-    }
-    # Retrieve biomaRt annotation data frame
-    ensembl <- sub("(.*)\\..*$", "\\1", rownames(df))
-    message("Downloading biomaRt manifest...")
-    mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
-    message("Retrieving annotation data...")
-    ensemblAnnot <- getBM(filters= "ensembl_gene_id",
-                          attributes= c("ensembl_gene_id", "hgnc_symbol",
-                                        "gene_biotype", "description"),
-                          values=ensembl, mart= mart)
-    ensemblAnnot <- ensemblAnnot[ensemblAnnot$hgnc_symbol != '', ]
-    if (codingOnly) {
-        ensemblAnnot <- ensemblAnnot[ensemblAnnot$gene_biotype == 'protein_coding', ]
-    }
-    ensemblAnnot$gene_biotype <- NULL
-    return(ensemblAnnot)
-}
 
 
 name.convert <- function(df, ensemblAnnot, regex='', genelist='', description=F) {
@@ -131,14 +72,14 @@ name.convert <- function(df, ensemblAnnot, regex='', genelist='', description=F)
 
 
 deg <- edgeR.de.test(datan, datat, "normal", "tumor")
+deg <- deg[(deg$p_value <= 0.05) & (abs(deg$log2_fold_change) >= 1), ]
 ensemblAnnot <- retrieve.ensembAnnot(deg)
 deg <- name.convert(deg, ensemblAnnot, genelist=genelist$symbol)
 deg$symbol <- rownames(deg)
 deg <- left_join(deg, genelist, by="symbol")
 deg$category[is.na(deg$category)] <- "cadherin"
-deg <- deg[(deg$p_value <= 0.05) & (abs(deg$log2_fold_change) >= 1), ]
 
-## Plot heatmap using FPKM values
+## Boxplot using FPKM values
 library(reshape2)
 library(ggplot2)
 library(ggpubr)
