@@ -75,10 +75,11 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     df$hgnc_symbol <- NULL
     if (libSize) {
         if (description) {
-            return(list(df, library_size))
+            return(list(exp=df, libSize=library_size))
         }
         else {
-            return(list(df[ ,grep("TCGA", colnames(df))], library_size))
+            return(list(exp=df[ ,grep("TCGA", colnames(df))],
+                        libSize=library_size))
         }
     }
     else {
@@ -203,7 +204,7 @@ prep.cor.heatmap <- function(df, genelist, cluster=F,
         dd <- as.dist((1 - df) / 2)
         hc <- hclust(dd)
         df <- df[hc$order, hc$order]    
-    } 
+    }
     df[upper.tri(df)] <- NA
     df <- melt(df, na.rm=T)
     df$sample <- sample
