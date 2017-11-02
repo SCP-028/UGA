@@ -55,7 +55,9 @@ def svc_param_selection(X, y, nfolds=3,
                 'C': [2 ** i for i in np.linspace(log2(params['C']) - 1,
                                                   log2(params['C']) + 1,
                                                   endpoint=True)],
-                'gamma': [2 ** i for i in np.linspace(log2(params['gamma']) - 1, log2(params['gamma']) + 1, endpoint=True)]
+                'gamma': [2 ** i for i in np.linspace(log2(params['gamma']) - 1,
+                                                      log2(params['gamma']) + 1,
+                                                      endpoint=True)]
             }
         ]
         grid_search = GridSearchCV(SVC(decision_function_shape='ovo'),
@@ -81,7 +83,6 @@ def svm(train, train_labels):
     Return
     ------
         A tuned and trained SVM model.
-
     """
     svc_params = svc_param_selection(train, train_labels)
     svc = svc_params.best_estimator_
