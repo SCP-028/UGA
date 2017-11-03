@@ -1,22 +1,25 @@
 #!python3
 """
 http://pka.engr.ccny.cuny.edu/index.php
-Crawler for the pKa Database, retrieving all the pKa values for the calculated PDB PROTEINS.
+Crawler for the pKa Database, retrieving all the pKa values for the calculated PDB proteins.
 """
 import re
 from io import StringIO
 import requests
 import pandas as pd
+import numpy as np
 from bs4 import BeautifulSoup
 
 
-def ParseTable(soup):
+def ParseTable(soup, id):
     """Format the retrieved text table into a DataFrame.
 
     Parameters
     ----------
         soup: BeautifulSoup
             The HTML table to be formatted.
+        id: str
+            The PDB ID, used for cleaning possible mistakes in the database.
 
     Return
     ------
@@ -24,19 +27,31 @@ def ParseTable(soup):
         Record_ID, PDB_ID, Residue, pKa
     """
     df = soup.find('pre').string
+    df = re.sub(r', ', r',', df)  # Probably multiple chains in Record_ID
     df = re.sub(r' +', r'\t', df)
-    df = re.sub(r'\n\t', r'\n', df)
-    df = re.sub(r'[^\t]*=.*', 'NA', df)
+    df = re.sub(r'\n\t', r'\n', df)  # multiple spaces -> tabs
+    df = re.sub(r'[^\t]*=.*', 'NA', df)  # Pairwise values removed
+    pdb = re.compile(f'({id})_?([^\t\.]+)')
+    df = re.sub(pdb, r'\1\t\2', df)  # fix PDB_IDs that have no spaces after
+    df = re.sub(r'<|>', r'', df)
     df = StringIO(df)
+    # df.seek(0)  # Seek back to the start of the file
+    datatype = {
+        'Record_ID': 'str',
+        'PDB_ID': 'str',
+        'Residue': 'str',
+        'pKa': np.float32
+    }
     df = pd.read_table(
         df,
         sep='\t',
         skiprows=1,
-        usecols=['Record_ID', 'PDB_ID', 'Residue', 'pKa'])
+        usecols=['Record_ID', 'PDB_ID', 'Residue', 'pKa'],
+        dtype=datatype)
     return df
 
 
-# get all PDB IDs in the database
+# Get all PDB IDs in the database
 HEADER = {
     'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.75 Safari/537.36',
@@ -88,6 +103,10 @@ for id in PDBIDS:
     PARAM['protein_string'] = id
     r = SS.get(URL, headers=HEADER, params=PARAM)
     soup = BeautifulSoup(r.content, 'lxml')
-    df = ParseTable(soup)
+    df = ParseTable(soup, id)
     pKa = pKa.append(df)
-pKa.to_feather("./pKa.ft")
+# Final modifications before storing
+dfr = pKa.loc[pKa.PDB_ID.isin(PDBIDS), :]  # Correct values
+dfw = pKa.loc[~pKa.PDB_ID.isin(PDBIDS), :]  # Wrong values
+
+pKa.to_csv("./pKa.csv", index_label=False, index=False)
