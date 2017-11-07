@@ -105,8 +105,5 @@ for id in PDBIDS:
     soup = BeautifulSoup(r.content, 'lxml')
     df = ParseTable(soup, id)
     pKa = pKa.append(df)
-# Final modifications before storing
-dfr = pKa.loc[pKa.PDB_ID.isin(PDBIDS), :]  # Correct values
-dfw = pKa.loc[~pKa.PDB_ID.isin(PDBIDS), :]  # Wrong values
 
 pKa.to_csv("./pKa.csv", index_label=False, index=False)
