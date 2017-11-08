@@ -93,14 +93,14 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
 }
 
 
-transform.data <- function(df, annot, ensAnnot) {
+transform.data <- function(df, annot, project) {
     #' Separate different stages, and melt for ggplot.
     #'
     #' Require reshape2 to work (uses melt function).
     #'  
     #' @param df The data frame whose rownames are to be converted.
     #' @param annot Stage information.
-    #' @param ensAnnot Annotation data.frame from `retrieve.ensembAnnot`.
+    #' @param project The TCGA project name.
     #'
     #' @return A melted data.frame with different stages.
     library(reshape2)
@@ -109,13 +109,13 @@ transform.data <- function(df, annot, ensAnnot) {
     df <- melt(df, id.vars = "symbol")
     df$stage <- 0
     stage1 <- annot$barcode[grepl("(^i$)|(\\si[abc]?$)|(1)", annot$tumor_stage) &
-                                annot$project == project[i]]
+                                annot$project == project]
     stage2 <- annot$barcode[grepl("(^ii$)|(\\si{2}[abc]?$)|(2)", annot$tumor_stage) &
-                                annot$project == project[i]]
+                                annot$project == project]
     stage3 <- annot$barcode[grepl("(^iii$)|(\\si{3}[abc]?$)|(3)", annot$tumor_stage) &
-                                annot$project == project[i]]
+                                annot$project == project]
     stage4 <- annot$barcode[grepl("(^iv$)|(\\siv[abc]?$)|(4)", annot$tumor_stage) &
-                                annot$project == project[i]]
+                                annot$project == project]
     df$stage[df$variable %in% stage1] <- "i"
     df$stage[df$variable %in% stage2] <- "ii"
     df$stage[df$variable %in% stage3] <- "iii"
