@@ -27,6 +27,6 @@ michaelis.menten <- function(t, y, parameters) {
     )
 }
 
-times <- seq(0, 100, by = 0.01)
+times <- seq(0, 1000, by = 0.01)
 out <- ode(y = initial_state, parms = parameters,
            func = michaelis.menten, times = times)
