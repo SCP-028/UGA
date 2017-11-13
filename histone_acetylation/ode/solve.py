@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 def model(y, t):
-    """ Function that returns dx/dt."""
+    """Function that returns dx/dt."""
     Km_PDHA1_Pyruvate = 64.8
     Km_PDHA1_NAD = 33
     Kcat_PDHA1 = 69

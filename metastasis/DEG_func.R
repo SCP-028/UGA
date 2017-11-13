@@ -125,7 +125,7 @@ transform.data <- function(df, annot, project) {
 }
 
 
-exp.boxplot <- function(datan, datat, proj, ensAnnot, annot) {
+exp.boxplot <- function(datan, datat, proj, annot) {
     #' Convert ensembl to gene symbol.
     #'
     #' Require dplyr to work (uses inner_join function).
@@ -134,7 +134,6 @@ exp.boxplot <- function(datan, datat, proj, ensAnnot, annot) {
     #' @param datan The data frame for normal samples.
     #' @param datat The data frame for tumor samples.
     #' @param proj The current cancer project.
-    #' @param ensAnnot Annotation data.frame from `retrieve.ensembAnnot`.
     #' @param annot Stage information.
     #'
     #' @return Genes used in the boxplot.
@@ -143,9 +142,10 @@ exp.boxplot <- function(datan, datat, proj, ensAnnot, annot) {
     library(ggplot2)
     library(ggpubr)
 
-    datan <- transform.data(datan, annot, ensAnnot)
-    datat <- transform.data(datat, annot, ensAnnot)
+    datan <- transform.data(datan, annot, proj)
+    datat <- transform.data(datat, annot, proj)
     datan <- datan[datan$symbol %in% datat$symbol, ]
+    datat <- datat[datat$symbol %in% datan$symbol, ]
 
     if (nrow(datan) != 0 & nrow(datat) != 0){
         datan$sample <- "control"
@@ -169,19 +169,17 @@ exp.boxplot <- function(datan, datat, proj, ensAnnot, annot) {
         # Calculate mean of each group
         df <- df %>% group_by(symbol) %>% mutate(meanFPKM=mean(log2FPKM))
         # Each group is compared to the mean value
-        ggplot(df, aes(stage, log2FPKM))+
-            geom_boxplot()+
-            facet_wrap(facets = "symbol")+
-            stat_compare_means(ref.group=".all.", label="p.signif", method="t.test")+
-            geom_hline(aes(yintercept = meanFPKM), linetype = 2)+
-            ggtitle(project[i])
-        ggsave(paste0("../CDH/", proj, ".tiff"), device = "tiff", width = 16,
-               height = 9, units = "in")
+        p <- ggplot(df, aes(stage, log2FPKM))+
+                geom_boxplot()+
+                facet_wrap(facets = "symbol")+
+                stat_compare_means(ref.group="control", label="p.signif")+
+                geom_hline(aes(yintercept = meanFPKM), linetype = 2)+
+                ggtitle(proj)
         message(paste0(proj, " boxplot finished."))
-        return(unique(as.character(df$symbol)))
+        return(p)
     }
     else {
-        message(paste0(proj, " ignored because no CDH gene was found."))
+        message(paste0(proj, " ignored because none of the genes had a significant difference."))
     }
 }
 
