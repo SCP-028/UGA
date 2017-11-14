@@ -1,6 +1,6 @@
 parameters <- c(
                 Km_PDHA1_Pyruvate = 64.8, Km_PDHA1_NAD = 33, Km_PDHA1_CoA1 = 4, Kcat_PDHA1 = 69,
-                Km_ACSS1_Acetate = 73, Km_ACSS1_CoA = 11, Kcat_ACSS1 = 1.9,
+                Km_ACSS1_Acetate = 73, Km_ACSS1_CoA1 = 11, Kcat_ACSS1 = 1.9,
                 Km_ACOT12_AcCoA2 = 47, Kcat_ACOT12 = 1.48,
                 Km_CS_OXa = 5.9, Km_CS_AcCoA1 = 5, Kcat_CS = 167,
                 Km_ACO2_Citrate = 480, Km_ACO2_Isocitrate = 120, Kcat_ACO2_1 = 5.3, Kcat_ACO2_2 = 1.1,
@@ -8,7 +8,7 @@ parameters <- c(
                 Km_IDH2_Isocitrate = 2400, Km_IDH2_NAD = 80, Kcat_IDH2 = 30,
                 Km_OGDH_AlphaKG = 4000, Km_OGDH_NAD = 80, Kcat_OGDH = 30,
                 Km_PC_Pyruvate = 220, Km_PC_HCO3 = 3000, Kcat_PC = 60,
-                Km_ACSS2_Acetate = 73, Km_ACSS2_CoA = 11, Kcat_ACSS2 = 1.9,
+                Km_ACSS2_Acetate = 73, Km_ACSS2_CoA2 = 11, Kcat_ACSS2 = 1.9,
                 Km_ACACA_AcCoA2 = 34, Km_ACACA_HCO3 = 2100, Kcat_ACACA = 10.1,
                 Km_FASN_AcCoA2 = 7, Km_FASN_NADPH = 5, Km_FASN_HCO3 = , Kcat_FASN = 2.7,
                 Kcat_HDAC1 = 2.8,
@@ -23,14 +23,17 @@ parameters <- c(
                 c_HCO3 = 11200,
                 c_CoA_total = 15,
                 c_NAD_total = 46.3,  # NADH 22, NAD+ 24.3, FAD 0.078
+                v_max_SLC16A3 = 0.14195,
                 c_Acetate_blood = 125,
-                k_T_acetate = 0.157,
+                k_T_Acetate = 0.157,
                 n_ATP_NAD = 2.5,
                 v_ATP_ss = 0.2,
                 c_NADH_ss = 22,
-                # constraints
-                c_CoA1 = max(0, c_CoA_total - c_AcCoA1),
-                c_CoA2 = max(0, c_CoA_total - c_AcCoA2),
+                c_NADPH = 51,
+                # # constraints
+                # c_CoA1 = max(0, c_CoA_total - c_AcCoA1),
+                # c_CoA2 = max(0, c_CoA_total - c_AcCoA2),
+                # c_NADH = max(0, c_NAD_total - c_NAD),
                 # expression from LIHC
                 c_ACACA = 1.3937241,
                 c_ACLY = 5.9057259,
@@ -43,6 +46,7 @@ parameters <- c(
                 c_HDAC1 = 9.6725321,
                 c_HDAC2 = 1.3847293,
                 c_HDAC3 = 5.3305112,
+                c_FASN = 26.7645829,
                 c_HMGCS1 = 26.2653794,
                 c_IDH2 = 92.8854856,
                 c_KAT2A = 3.4616622,

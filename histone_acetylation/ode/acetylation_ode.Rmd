@@ -3,16 +3,17 @@ title: "Acetylation ODEs"
 output:
   html_document:
     df_print: paged
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Ac-CoA1
-PDHA1 + ACSS1 - ACOT13 - CS
+PDHA1 + ACSS1 - CS
 $$
 \begin{aligned}
-\frac{dAc-CoA1}{dt} = &\frac{K_{cat, PDHA1} \times [PDHA1] \times [Pyruvate] \times [NAD^+]}{(K_{m, PDHA1, Pyruvate}+ [Pyruvate]) \times (K_{m, PDHA1, NAD^+} + [NAD^+])}\\
-&+ \frac{K_{cat, ACSS1} \times [ACSS1] \times [Acetate] \times (15 - [Ac-CoA1])}{(K_{m, ACSS1, Acetate} + [Acetate]) \times (K_{m, ACSS1, CoA} + (15 - [Ac-CoA1])}\\
-&- \frac{K_{cat, ACOT13} \times [ACOT13] \times [Ac-CoA1]}{K_{m, ACOT13, Ac-CoA1} + [Ac-CoA1]}\\
-&- \frac{K_{cat, CS} \times [CS] \times [OXa] \times [Ac-CoA1]}{(K_{m, CS, OXa} + [OXa]) \times (K_{m, CS, Ac-CoA1} + [Ac-CoA1])}
+\frac{dAc-CoA1}{dt} = &\frac{K_{cat, PDHA1} \times [PDHA1] \times [Pyruvate] \times [NAD^+] \times [CoA1]}{(K_{m, PDHA1, Pyruvate}+ [Pyruvate])(K_{m, PDHA1, NAD^+} + [NAD^+])(K_{m, PDHA1, CoA1} + [CoA1])}\\
+&+ \frac{K_{cat, ACSS1} \times [ACSS1] \times [Acetate] \times [CoA1]}{(K_{m, ACSS1, Acetate} + [Acetate])(K_{m, ACSS1, CoA} + [CoA1])}\\
+&- \frac{K_{cat, CS} \times [CS] \times [OXa] \times [Ac-CoA1]}{(K_{m, CS, OXa} + [OXa])(K_{m, CS, Ac-CoA1} + [Ac-CoA1])}
 \end{aligned}
 $$
 
@@ -20,9 +21,9 @@ $$
 CS - ACO2 - ACLY
 $$
 \begin{aligned}
-\frac{dCitrate}{dt} = &\frac{K_{cat, CS} \times [CS] \times [OXa] \times [Ac-CoA1]}{(K_{m, CS, OXa} + [OXa]) \times (K_{m, CS, Ac-CoA1} + Ac-CoA1)}\\
-&- (\frac{K_{cat, ACO2_1} \times [ACO2] \times [Citrate]}{(K_{m, ACO2, Citrate} + [Citrate]} - \frac{K_{cat, ACO2_2} \times [ACO2] \times [Isocitrate]}{K_{m, ACO2, Isocitrate} + [Isocitrate]})\\
-&- \frac{K_{cat, ACLY} \times [ACLY] \times [Citrate]}{K_{m, ACLY, Citrate} + [Citrate]}
+\frac{dCitrate}{dt} = &\frac{K_{cat, CS} \times [CS] \times [OXa] \times [Ac-CoA1]}{(K_{m, CS, OXa} + [OXa])(K_{m, CS, Ac-CoA1} + Ac-CoA1)}\\
+&- (\frac{K_{cat, ACO2_1} \times [ACO2] \times [Citrate]}{K_{m, ACO2, Citrate} + [Citrate]} - \frac{K_{cat, ACO2_2} \times [ACO2] \times [Isocitrate]}{K_{m, ACO2, Isocitrate} + [Isocitrate]})\\
+&- \frac{K_{cat, ACLY} \times [ACLY] \times [Citrate] \times [CoA2]}{(K_{m, ACLY, Citrate} + [Citrate])(K_{m, ACLY, CoA2} + [CoA2])}
 \end{aligned}
 $$
 
@@ -31,7 +32,7 @@ ACO2 - IDH2
 $$
 \begin{aligned}
 \frac{dIsocitrate}{dt} = &(\frac{K_{cat, ACO2_1} \times [ACO2] \times [Citrate]}{K_{m, ACO2, Citrate} + [Citrate]} - \frac{K_{cat, ACO2_2} \times [ACO2] \times [Isocitrate]}{K_{m, ACO2, Isocitrate} + [Isocitrate]})\\
-&- \frac{K_{cat, IDH2} \times [IDH2] \times [Isocitrate] \times [NAD^+]}{(K_{m, IDH2, Isocitrate} + [Isocitrate]) \times (K_{m, IDH2, NAD^+} + [NAD^+])}
+&- \frac{K_{cat, IDH2} \times [IDH2] \times [Isocitrate] \times [NAD^+]}{(K_{m, IDH2, Isocitrate} + [Isocitrate])(K_{m, IDH2, NAD^+} + [NAD^+])}
 \end{aligned}
 $$
 
@@ -39,8 +40,8 @@ $$
 IDH2 - OGDH
 $$
 \begin{aligned}
-\frac{dAlphaKG}{dt} = &\frac{K_{cat, IDH2} \times [IDH2] \times [Isocitrate] \times [NAD^+]}{(K_{m, IDH2, Isocitrate} + [Isocitrate]) \times (K_{m, IDH2, NAD^+} + [NAD^+])}\\
-&- \frac{K_{cat, OGDH} \times [OGDH] \times [AlphaKG] \times [NAD^+])}{(K_{m, OGDH, AlphaKG} + [AlphaKG]) \times (K_{m, OGDH, NAD^+} + [NAD^+])}
+\frac{dAlphaKG}{dt} = &\frac{K_{cat, IDH2} \times [IDH2] \times [Isocitrate] \times [NAD^+]}{(K_{m, IDH2, Isocitrate} + [Isocitrate])(K_{m, IDH2, NAD^+} + [NAD^+])}\\
+&- \frac{K_{cat, OGDH} \times [OGDH] \times [AlphaKG] \times [NAD^+]}{(K_{m, OGDH, AlphaKG} + [AlphaKG])(K_{m, OGDH, NAD^+} + [NAD^+])}
 \end{aligned}
 $$
 
@@ -48,37 +49,37 @@ $$
 OGDH + PC - CS
 $$
 \begin{aligned}
-\frac{dOXa}{dt} = &\frac{K_{cat, OGDH} \times [OGDH] \times [AlphaKG] \times [NAD^+]}{(K_{m, OGDH, AlphaKG} + [AlphaKG]) \times (K_{m, OGDH, NAD^+} + [NAD^+])}\\
-&+ \frac{K_{cat, PC} \times [PC] \times [Pyruvate] \times [HCO_3^-])}{(K_{m, PC, Pyruvate} + [Pyruvate]) \times (K_{m, PC, HCO_3^-} + [HCO_3^-])}\\
-&- \frac{((K_{cat, CS} \times [CS] \times [OXa] \times [Ac-CoA1]}{(K_{m, CS, OXa} + [OXa]) \times (K_{m, CS, Ac-CoA1} + [Ac-CoA1])}
+\frac{dOXa}{dt} = &\frac{K_{cat, OGDH} \times [OGDH] \times [AlphaKG] \times [NAD^+]}{(K_{m, OGDH, AlphaKG} + [AlphaKG])(K_{m, OGDH, NAD^+} + [NAD^+])}\\
+&+ \frac{K_{cat, PC} \times [PC] \times [Pyruvate] \times [HCO_3^-]}{(K_{m, PC, Pyruvate} + [Pyruvate])(K_{m, PC, HCO_3^-} + [HCO_3^-])}\\
+&- \frac{K_{cat, CS} \times [CS] \times [OXa] \times [Ac-CoA1]}{(K_{m, CS, OXa} + [OXa])(K_{m, CS, Ac-CoA1} + [Ac-CoA1])}
 \end{aligned}
 $$
 
 ## Ac-CoA2
-ACLY + ACSS2 - ACACA - HMGCS1 - KAT2A - ACOT12
+ACLY + ACSS2 - ACACA - FASN - HMGCS1 - KAT2A - ACOT12
 $$
 \begin{aligned}
-\frac{dAc-CoA2}{dt} = &\frac{K_{cat, ACLY} \times [ACLY] \times [Citrate]}{K_{m, ACLY, Citrate} + [Citrate]} \\
-&+ \frac{K_{cat, ACSS2} \times [ACSS2] \times [Acetate] \times (15 - [Ac-CoA2]}{(K_{m, ACSS2, Acetate} + [Acetate]) \times (K_{m, ACSS2, CoA} + (15 - [Ac-CoA2]))}\\
-&- \frac{2 \times K_{cat, ACACA} \times [Ac-CoA2] \times [ACACA] \times [HCO_3^-]}{(K_{m, ACACA, Ac-CoA2} + [Ac-CoA2]) \times (K_{m, ACACA, HCO_3^-} + [HCO_3^-])}\\
-&-\frac{(K_{cat, HMGCS1} \times [HMGCS1] \times [Ac-CoA2] \times [Ac-CoA2]}{(K_{m, HMGCS1, Ac-CoA2} + [Ac-CoA2]) \times (K_{m, HMGCS1, Ac-CoA2} + [Ac-CoA2])}\\
+\frac{dAc-CoA2}{dt} = &\frac{K_{cat, ACLY} \times [ACLY] \times [Citrate] \times [CoA2]}{(K_{m, ACLY, Citrate} + [Citrate])(K_{m, ACLY, CoA2} + [CoA2])} \\
+&+ \frac{K_{cat, ACSS2} \times [ACSS2] \times [Acetate] \times [CoA2]}{(K_{m, ACSS2, Acetate} + [Acetate])(K_{m, ACSS2, CoA} + [CoA2])}\\
+&- \frac{K_{cat, ACACA} \times [ACACA] \times [Ac-CoA2] \times [HCO_3^-]}{(K_{m, ACACA, Ac-CoA2} + [Ac-CoA2])(K_{m, ACACA, HCO_3^-} + [HCO_3^-])}\\
+&-2 \times \frac{k_{cat, FASN} \times [FASN] \times [Ac-CoA2]^2 \times [HCO_3^-] \times [NADPH]^2}{(K_{m, FASN, AcCoA2} + [Ac-CoA2])^2(K_{m, FASN, HCO_3^-} + [HCO_3^-])(K_{m, FASN, NADPH} + [NADPH])^2}\\
+&-3 \times \frac{K_{cat, HMGCS1} \times [HMGCS1] \times [Ac-CoA2]^3}{(K_{m, ACAT2, Ac-CoA2} + [Ac-CoA2])^2(K_{m, HMGCS1, Ac-CoA2} + [Ac-CoA2])}\\
 &- \frac{K_{cat, KAT2A} \times [KAT2A] \times [Ac-CoA2]}{K_{m, KAT2A, Ac-CoA2} + [Ac-CoA2]}\\
-&- \frac{K_{cat, ACOT12} \times [ACOT12] \times [Ac-CoA2])}{K_{m, ACOT12, Ac-CoA2} + [Ac-CoA2]}
+&- \frac{K_{cat, ACOT12} \times [ACOT12] \times [Ac-CoA2]}{K_{m, ACOT12, Ac-CoA2} + [Ac-CoA2]}
 \end{aligned}
 $$
 
 ## Acetate
-SLC16A3 + HDAC1 + HDAC2 + HDAC3 + ACOT13 + ACOT12 - ACSS1 - ACSS2
+SLC16A3 + HDAC1 + HDAC2 + HDAC3 + ACOT12 - ACSS1 - ACSS2
 $$
 \begin{aligned}
-\frac{dAcetate}{dt} = &88.07\\
-&+ K_{cat, HDAC1} \times HDAC1\\
-&+ K_{cat, HDAC2} \times HDAC2\\
-&+ K_{cat, HDAC3} \times HDAC3\\
-&+ \frac{K_{cat, ACOT13} \times [ACOT13] \times [Ac-CoA1]}{K_{m, ACOT13, Ac-CoA1} + [Ac-CoA1]}\\
+\frac{dAcetate}{dt} = &V_{max, SLC16A3} \times [\frac{[Acetate]_{blood}}{[Acetate]_{blood} + K_{T, Acetate}} - \frac{[Acetate]}{[Acetate] + K_{T, Acetate}}]\\
+&+ K_{cat, HDAC1} \times [HDAC1]\\
+&+ K_{cat, HDAC2} \times [HDAC2]\\
+&+ K_{cat, HDAC3} \times [HDAC3]\\
 &+ \frac{K_{cat, ACOT12} \times [ACOT12] \times [Ac-CoA2]}{K_{m, ACOT12, Ac-CoA2} + [Ac-CoA2]}\\
-&- \frac{K_{cat, ACSS1} \times [ACSS1] \times [Acetate] \times (15 - [Ac-CoA1])}{(K_{m, ACSS1, Acetate} + [Acetate]) \times (K_{m, ACSS1, CoA} + (15 - [Ac-CoA1]))}\\
-&- \frac{K_{cat, ACSS2} \times [ACSS2] \times [Acetate] \times (15 - [Ac-CoA2])}{(K_{m, ACSS2, Acetate} + [Acetate]) \times (K_{m, ACSS2, CoA} + (15 - [Ac-CoA2]))}
+&- \frac{K_{cat, ACSS1} \times [ACSS1] \times [Acetate] \times [CoA1]}{(K_{m, ACSS1, Acetate} + [Acetate]) \times (K_{m, ACSS1, CoA} + [CoA1])}\\
+&- \frac{K_{cat, ACSS2} \times [ACSS2] \times [Acetate] \times [CoA2]}{(K_{m, ACSS2, Acetate} + [Acetate]) \times (K_{m, ACSS2, CoA} + [CoA2])}
 \end{aligned}
 $$
 
@@ -86,7 +87,7 @@ $$
 v_NAD - PDHA1 - IDH2 - OGDH
 $$
 \begin{aligned}
-\frac{dNAD}{dt} = &\frac{0.20844 - (0.0012 \times [NAD^+])}{85}\\
+\frac{dNAD^+}{dt} = &\frac{V_{ATP, ss}}{n_{ATP:NAD^+}} \times \frac{[NADH]}{[NADH]_{ss}}\\
 &- \frac{K_{cat, PDHA1} \times [PDHA1] \times [Pyruvate] \times [NAD^+]}{(K_{m, PDHA1, Pyruvate} + [Pyruvate]) \times (K_{m, PDHA1, NAD^+} + [NAD^+])}\\
 &- \frac{K_{cat, IDH2} \times [IDH2] \times [Isocitrate] \times [NAD^+]}{(K_{m, IDH2, Isocitrate} + [Isocitrate]) \times (K_{m, IDH2, NAD^+} + [NAD^+])}\\
 &- \frac{K_{cat, OGDH} \times [OGDH] \times [AlphaKG] \times [NAD^+]}{(K_{m, OGDH, AlphaKG} + [AlphaKG]) \times (K_{m, OGDH, NAD^+} + [NAD^+])}

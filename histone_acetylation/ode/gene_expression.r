@@ -5,7 +5,7 @@ mitochondria <- c("PDHA1", "CS", "ACOT13", "ACO2",
                   "ACSS1", "PC", "OGDH", "IDH2")
 cytosol <- c("ACOT12", "ACLY", "HMGCS1", "HDAC1",
              "HDAC2", "HDAC3", "ACSS2", "SLC16A3",
-             "KAT2A", "ACACA")
+             "KAT2A", "ACACA", "FASN")
 genelist <- c(mitochondria, cytosol)
 genelist <- genelist[order(genelist)]
 
