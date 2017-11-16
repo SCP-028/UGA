@@ -1,5 +1,5 @@
 v_PDHA1 <- (
-    (Kcat_PDHA1 * c_PDHA1 * c_Pyruvate * c_NAD) /
+    (Kcat_PDHA1 * c_PDHA1 * c_Pyruvate * c_NAD * c_CoA1) /
     (
         (Km_PDHA1_Pyruvate + c_Pyruvate) *
         (Km_PDHA1_NAD + c_NAD) *
