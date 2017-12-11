@@ -1,6 +1,7 @@
 # Calculate protein net charge at pH = 7, then we can know
 # how many protons were contributed by the protein.
 # Need http://www.uniprot.org/uploadlists/ to convert IDs.
+rm(list=ls())
 setwd("~/data/protein_pka")
 require(dplyr)
 require(tidyr)
@@ -24,11 +25,11 @@ df <- df %>%
   mutate(aa = sub("_.*$", "", Residue)) %>%
   filter(aa %in% c(acidic, basic)) %>%
   mutate(charge = ifelse(aa %in% acidic,
-                         eq_acid(pKa, 7.5),
-                         eq_base(pKa, 7.5))) %>%
+                         eq_acid(pKa, 7.0),
+                         eq_base(pKa, 7.0))) %>%
   group_by(PDB_ID) %>%
   summarise(total_charge = sum(charge))
-write.csv(df, file="./database_charge_pH7.5.csv", quote = F, row.names = F)
+write.csv(df, file="./database_charge_pH7.0.csv", quote = F, row.names = F)
 
 # Map to Ensembl gene ID
 # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz
@@ -111,7 +112,8 @@ df <- df %>%
   summarise(net_charge = mean(total_charge))
 df <- inner_join(df, exp, by = "ensembl")
 df <- df %>%
-  mutate(value = log2(expression + 0.1) * net_charge)
+  mutate(expression = log2(expression + 0.1)) %>%
+  mutate(value = expression * net_charge)
 
 # Net charge distribution
 x <- select(df, ensembl, net_charge)
@@ -123,7 +125,7 @@ chrg_dist <- ggplot(x, aes(ensembl, net_charge)) +
              xlab("Gene") +
              ylab("Net Charge") +
              ggtitle("Protein net charge distribution")
-ggsave(chrg_dist, filename = "./charge_distribution_pH7.5.tiff", device = "tiff",
+ggsave(chrg_dist, filename = "./charge_distribution_pH7.0.tiff", device = "tiff",
        width = 16, height= 9, units = "in", dpi = 200)
 
 # Expression distribution
@@ -140,10 +142,40 @@ exp_dist <- ggplot(df, aes(ensembl, expression, color=stage)) +
             ggtitle("Gene Expression Distribution")
 ggsave(exp_dist, filename = "./expression_distribution.tiff", device = "tiff",
        width = 16, height= 9, units = "in", dpi = 200)
+
 # Protein net charge * expression
 exp_chrg <- ggplot(df, aes(value, color=stage)) +
             geom_density() +
             xlab("Net Charge * Expression")+
             ggtitle("Charge * Expression Distribution")
-ggsave(exp_chrg, filename = "./exp_charge_pH7.5.tiff", device = "tiff",
+ggsave(exp_chrg, filename = "./exp_charge_pH7.0.tiff", device = "tiff",
        width = 12, height= 9, units = "in", dpi = 200)
+
+# Expression distribution, but continous data to catagorical data
+df <- df %>%
+      mutate(charge = cut(net_charge,
+                      seq((floor(min(df$net_charge) / 10) * 10),
+                          (ceiling(max(df$net_charge) / 10) * 10),
+                          10)))
+counts <- df %>% 
+          group_by(charge, stage) %>%
+          tally() %>%
+          filter(stage == "ii")
+exp_sum <- df %>%
+           group_by(charge, stage) %>%
+           summarise(total_exp = round(sum(expression), 2))
+exp_catg_chrg <- ggplot(df, aes(charge, expression, fill = stage)) +
+                 geom_boxplot() +
+                 geom_text(data=counts, aes(label = n,
+                                            y = max(df$expression) + 1.6),
+                           position = position_dodge(0.9)) +
+                 geom_text(data = exp_sum,
+                           aes(label = total_exp,
+                               y = max(df$expression) + 0.6),
+                           position = position_dodge(0.9),
+                           angle = 45) +
+                 xlab("Net Charge") +
+                 ylab("log2(expression + 0.1)") +
+                 ggtitle("Gene Expression Distribution at pH = 7.0")
+ggsave(exp_catg_chrg, filename = "./exp_catagory_pH7.0.tiff", device = "tiff",
+       width = 16, height = 9, units = "in", dpi = 200)
