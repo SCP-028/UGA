@@ -3,6 +3,7 @@
 Predict protein pKa based on MCCE method.
 http://pka.engr.ccny.cuny.edu/
 """
+import locale
 import logging
 import os
 import re
@@ -14,6 +15,7 @@ from urllib.request import urlopen
 
 import pandas as pd
 
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 rootpath = '/lustre1/yz73026/protein_pka'
 if sys.platform == 'win32':
     os.chdir('C:/Users/jzhou/Desktop/protein_pka/')
@@ -53,7 +55,7 @@ class pdb:
         logger.info(f'{len(ids)} PDB files need to be downloaded.')
         self.ids.append(ids)
 
-    def getpdb(self, id, directory='./pdb'):
+    def getpdb(self, id, directory='pdb/'):
         """ Download PDB files from:
             ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/
 
@@ -94,7 +96,7 @@ class pdb:
             logger.warning(f'{id.upper()} not found.')
             self.err_id.append(id.upper())
 
-    def preprocess(self, id, directory='./pdb', backup=True):
+    def preprocess(self, id, directory='pdb/', backup=True):
         """
         This program will:
         1) strip lines other than ATOM and HETATM records
@@ -155,7 +157,7 @@ class pdb:
             f.write("\n".join(newlines))
         logger.info(f'{id.upper()} preprocessing complete.')
 
-    def set_params(self, id, directory='./pdb', quickrun=True):
+    def set_params(self, id, directory='pdb/', quickrun=True):
         """
         Set the parameters for MCCE.
 
@@ -176,12 +178,12 @@ class pdb:
         newlines = []
         if quickrun:
             subprocess.run([
-                'cp', './mcce3.0/run.prm.quick',
+                'cp', '/home/yz73026/src/mcce3.0/run.prm.quick',
                 os.path.join(filepath, 'run.prm')
             ])
         else:
             subprocess.run([
-                'cp', './mcce3.0/run.prm.default',
+                'cp', '/home/yz73026/src/mcce3.0/run.prm.default',
                 os.path.join(filepath, 'run.prm')
             ])
         with open(os.path.join(filepath, 'run.prm')) as f:
@@ -195,7 +197,7 @@ class pdb:
                 if line.endswith("(EPSILON_PROT)"):
                     line = re.sub(r'^[\d\.]+', r'8.0', line)
                 if line.startswith("/home/mcce/mcce3.0"):
-                    line = re.sub(r"^/.*3\.0", r"/home/yizhou/pkg/bin/mcce3.0",
+                    line = re.sub(r"^/.*3\.0", r"/home/yz73026/src/mcce3.0",
                                   line)
                 newlines.append(line)
         with open(os.path.join(filepath, 'run.prm'), 'w') as f:
@@ -221,8 +223,8 @@ class pdb:
         os.chdir(os.path.abspath(os.path.join(rootpath, directory, id.upper())))
         logger.info(f'{id.upper()} calculation started.')
         start = time.time()
-        with open(f'{id.upper()}.run.log') as f:
-            subprocess.run('/home/yz73026/src/mcce3.0', stdout=f)
+        with open(f'{id.upper()}.run.log', 'w') as f:
+            subprocess.run('/home/yz73026/src/mcce3.0/mcce', stdout=f)
         logger.info(f'{id.upper()} calculation finished, used {time.time() - start}s.')
 
 
@@ -239,5 +241,5 @@ if __name__ == '__main__':
     for item in x.dl_id:
         x.preprocess(item)
         x.set_params(item)
-    with Pool(os.cpu_count - 1) as p:
+    with Pool(os.cpu_count() - 1) as p:
         p.map(x.calc_pka, x.dl_id)
