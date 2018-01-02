@@ -231,8 +231,10 @@ class pdb:
 if __name__ == '__main__':
     x = pdb()
     x.load_id()
-    for item in x.ids:
-        x.getpdb(item)
+    with Pool(os.cpu_count() - 1) as p:
+        p.map(x.getpdb, x.ids)
+    # for item in x.ids:
+    #     x.getpdb(item)
     subprocess.run(['find', '.', '-type', 'd', '-empty', '-delete'])
     with open('./pdb/error_pdb.list', 'w') as f:
         f.write('\n'.join(x.err_id))
