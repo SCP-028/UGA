@@ -15,8 +15,8 @@ from urllib.request import urlopen
 
 import pandas as pd
 
-locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-rootpath = '/lustre1/yz73026/protein_pka'
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # Sapelo Locale is broken, quick fix
+rootpath = '/home/yizhou/protein_pka'
 if sys.platform == 'win32':
     os.chdir('C:/Users/jzhou/Desktop/protein_pka/')
 else:
@@ -24,6 +24,10 @@ else:
 
 logger = logging.getLogger('pKa_calc')
 logger.setLevel(logging.INFO)
+try:
+    os.makedirs('./pdb')
+except OSError:
+    pass
 handler = logging.FileHandler('./pdb/pKa_calculation.log')
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter(
@@ -44,7 +48,7 @@ class pdb:
         """
         Get list of existing pKa values, and list of PDB files to download
         """
-        print('Loading existing pKa values...')
+        logger.debug('Loading existing pKa values...')
         annot = pd.read_csv(
             './annotation/HUMAN_9606_idmapping.dat', sep='\t', header=None)
         df = pd.read_csv('./annotation/database_charge.csv')
@@ -53,7 +57,7 @@ class pdb:
         idAll = annot.loc[annot.id == 'PDB', 'value']
         ids = list(set(idAll) - set(idKnown))
         logger.info(f'{len(ids)} PDB files need to be downloaded.')
-        self.ids.append(ids)
+        self.ids = ids
 
     def getpdb(self, id, directory='pdb/'):
         """ Download PDB files from:
@@ -82,10 +86,10 @@ class pdb:
         saved_pdb = os.path.abspath(
             os.path.join(directory, id.upper(), f'{id.upper()}.pdb'))
         remoteaddr = f'ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/{pdbDir}/pdb{pdb_name}'
-        # print(f'Inquiring the remote file {id.upper()}.pdb ...')
+        logger.debug(f'Inquiring the remote file {id.upper()}.pdb ...')
         try:
             with urlopen(remoteaddr) as remotefile:
-                # print(f'Saving as {saved_pdb} ...')
+                logger.debug(f'Saving as {saved_pdb} ...')
                 with open(pdb_name, 'wb') as f:
                     f.write(remotefile.read())
             self.dl_id.append(id.upper())
@@ -178,12 +182,12 @@ class pdb:
         newlines = []
         if quickrun:
             subprocess.run([
-                'cp', '/home/yz73026/src/mcce3.0/run.prm.quick',
+                'cp', '/home/yizhou/pkg/bin/mcce3.0/run.prm.quick',
                 os.path.join(filepath, 'run.prm')
             ])
         else:
             subprocess.run([
-                'cp', '/home/yz73026/src/mcce3.0/run.prm.default',
+                'cp', '/home/yizhou/pkg/bin/mcce3.0/run.prm.default',
                 os.path.join(filepath, 'run.prm')
             ])
         with open(os.path.join(filepath, 'run.prm')) as f:
@@ -197,7 +201,7 @@ class pdb:
                 if line.endswith("(EPSILON_PROT)"):
                     line = re.sub(r'^[\d\.]+', r'8.0', line)
                 if line.startswith("/home/mcce/mcce3.0"):
-                    line = re.sub(r"^/.*3\.0", r"/home/yz73026/src/mcce3.0",
+                    line = re.sub(r"^/.*3\.0", r"/home/yizhou/pkg/bin/mcce3.0",
                                   line)
                 newlines.append(line)
         with open(os.path.join(filepath, 'run.prm'), 'w') as f:
@@ -224,24 +228,29 @@ class pdb:
         logger.info(f'{id.upper()} calculation started.')
         start = time.time()
         with open(f'{id.upper()}.run.log', 'w') as f:
-            subprocess.run('/home/yz73026/src/mcce3.0/mcce', stdout=f)
+            subprocess.run('/home/yizhou/pkg/bin/mcce3.0/mcce', stdout=f)
         logger.info(f'{id.upper()} calculation finished, used {time.time() - start}s.')
 
 
 if __name__ == '__main__':
     x = pdb()
     x.load_id()
-    with Pool(os.cpu_count() - 1) as p:
-        p.map(x.getpdb, x.ids)
-    # for item in x.ids:
-    #     x.getpdb(item)
+    for item in x.ids:
+        try:
+            x.getpdb(item)
+        except Error as e:
+            logger.error(e)
     subprocess.run(['find', '.', '-type', 'd', '-empty', '-delete'])
     with open('./pdb/error_pdb.list', 'w') as f:
         f.write('\n'.join(x.err_id))
     with open('./pdb/downloaded_pdb.list', 'w') as f:
         f.write('\n'.join(x.dl_id))
     for item in x.dl_id:
-        x.preprocess(item)
-        x.set_params(item)
-    with Pool(os.cpu_count() - 1) as p:
+        try:
+            x.preprocess(item)
+            x.set_params(item)
+        except Error as e:
+            logger.error(e)
+
+    with Pool(20) as p:
         p.map(x.calc_pka, x.dl_id)
