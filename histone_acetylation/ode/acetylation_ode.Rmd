@@ -30,7 +30,7 @@ $$
 $$
 \begin{aligned}
 \frac{dCitrate2}{dt} = &\frac{K_{cat, CTP} \times [CTP] \times [Citrate1]}{(K_{m, CTP, Citrate} + [Citrate1])(1 + \frac{[Citrate2]}{K_i})} \\
-&- \frac{K_{cat, ACLY} \times [ACLY] \times [Citrate2]}{(K_{m, ACLY, Citrate} + [Citrate2])(1 + \frac{[Ac-CoA2]}{K_i})}
+&- \frac{K_{cat, ACLY} \times [ACLY] \times [Citrate2] \times [CoA2]}{(K_{m, ACLY, Citrate} + [Citrate2])(K_{m, ACLY, CoA} + [CoA2])(1 + \frac{[Ac-CoA2]}{K_i})}
 \end{aligned}
 $$
 
@@ -108,7 +108,7 @@ $$
 $$
 \begin{aligned}
 \frac{dAc-CoA2}{dt} = &\frac{K_{cat, ACLY} \times [ACLY] \times [Citrate2] \times [CoA2]}{(K_{m, ACLY, Citrate} + [Citrate2])(K_{m, ACLY, CoA2} + [CoA2])(1 + \frac{[Ac-CoA2]}{K_i})^2} \\
-&+ \frac{K_{cat, ACSS2} \times [ACSS2] \times [Acetate] \times [CoA2]}{(K_{m, ACSS2, Acetate} + [Acetate])(K_{m, ACSS2, CoA} + [CoA2])}\\
+&+ \frac{K_{cat, ACSS2} \times [ACSS2] \times [Acetate] \times [CoA2]}{(K_{m, ACSS2, Acetate} + [Acetate])(K_{m, ACSS2, CoA} + [CoA2])(1 + \frac{[Ac-CoA2]}{K_i})^2}\\
 &- \frac{K_{cat, ACOT12} \times [ACOT12] \times [Ac-CoA2]}{(K_{m, ACOT12, Ac-CoA2} + [Ac-CoA2])(1 + \frac{[Acetate]}{K_i})(1 + \frac{[CoA2]}{K_i})} \\
 &-2 \times \frac{k_{cat, FASN} \times [FASN] \times [Ac-CoA2]^2 \times [HCO_3^-] \times [NADPH]^2}{(K_{m, FASN, AcCoA2} + [Ac-CoA2])^2(K_{m, FASN, HCO_3^-} + [HCO_3^-])(K_{m, FASN, NADPH} + [NADPH])^2}\\
 &-3 \times \frac{K_{cat, HMGCS1} \times [HMGCS1] \times [Ac-CoA2]^3}{(K_{m, ACAT2, Ac-CoA2} + [Ac-CoA2])^2(K_{m, HMGCS1, Ac-CoA2} + [Ac-CoA2])}\\
