@@ -16,11 +16,8 @@ from urllib.request import urlopen
 import pandas as pd
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # Sapelo Locale is broken, quick fix
-rootpath = '/home/yizhou/protein_pka'
-if sys.platform == 'win32':
-    os.chdir('C:/Users/jzhou/Desktop/protein_pka/')
-else:
-    os.chdir(rootpath)
+rootpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+os.chdir(rootpath)
 
 logger = logging.getLogger('pKa_calc')
 logger.setLevel(logging.INFO)
@@ -28,7 +25,7 @@ try:
     os.makedirs('./pdb')
 except OSError:
     pass
-handler = logging.FileHandler('./pdb/pKa_calculation.log')
+handler = logging.FileHandler('./pKa_calculation.log')
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter(
     '%(asctime)s\t%(levelname)s\t'
@@ -46,59 +43,85 @@ class pdb:
 
     def load_id(self):
         """
-        Get list of existing pKa values, and list of PDB files to download
+        Get list of existing pKa values, and list of PDB files to download.
         """
         logger.debug('Loading existing pKa values...')
-        annot = pd.read_csv(
-            './annotation/HUMAN_9606_idmapping.dat', sep='\t', header=None)
+        annot = pd.read_csv('./annotation/HUMAN_9606_idmapping.dat',
+                            sep='\t', header=None,
+                            names=['uniprot', 'id', 'value'])
         df = pd.read_csv('./annotation/database_charge.csv')
         idKnown = df.PDB_ID
-        annot.columns = ['uniprot', 'id', 'value']
         idAll = annot.loc[annot.id == 'PDB', 'value']
-        ids = list(set(idAll) - set(idKnown))
+        try:
+            x = pd.read_csv(handler.baseFilename, sep="\t", header=None,
+                            names=["datetime", "level", "func", "description"])
+            idFinished = x.loc[x.description.str.contains(
+                               r"finished", na=False), 'description']
+            idFinished = idFinished.str[0:4]
+            ids = list(set(idAll) - set(idKnown) - set(idFinished))
+        except Exception as e:
+            logger.error(e)
+            ids = list(set(idAll) - set(idKnown))
         logger.info(f'{len(ids)} PDB files need to be downloaded.')
         self.ids = ids
 
-    def getpdb(self, id, directory='pdb/'):
-        """ Download PDB files from:
-            ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/
+    def get_link(self, ids, directory='pdb/'):
+        """ Get PDB file links from:
+            ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/ ,
+            and create a folder to store the file.
 
         Parameters
         ----------
-            id: str
-                The PDB ID to download.
+            ids: list
+                The PDB IDs to download.
             directory: str, optional
                 The parent directory for saving the file.
 
         Returns
         -------
-            Nothing, just download XXXX.pdb to local directory.
+            Links to download.
         """
-        pdbDir = id[1:3].lower()  # the subdirectory of the pdb files
-        id = id[:4].lower()  # the pdb file names
-        id_ent = f'{id}.ent'
-        pdb_name = f'{id_ent}.gz'  # pdb file name
-        # Make sure the download dirctory exists
+        if isinstance(ids, list):
+            ids = [id[:4].lower() for id in ids]  # the pdb file names
+            pdb_names = [f'{id}.ent.gz' for id in ids]  # pdb file name
+            pdbDirs = [id[1:3].lower() for id in ids]  # the subdirectory of the pdb files
+            remoteaddr = [f'ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/{pdbDir}/pdb{pdb_name}' for pdbDir, pdb_name in zip(pdbDirs, pdb_names)]
+            # Make sure the download directory exists
+            for id in ids:
+                try:
+                    os.makedirs(os.path.join(directory, id.upper()))
+                except OSError:
+                    pass
+        else:
+            raise TypeError(f'{id} is not a string or list.')
+        return remoteaddr
+
+    def download_file(self, url):
+        """
+        Parameters
+        ----------
+            url: str
+                The url for downloading.
+
+        Returns
+        -------
+            Nothing, just download and unzip the file.
+        """
+        id = url[-11:-7]
+        ID = id.upper()
+        saved_pdb = os.path.join("./pdb", ID, f'{ID}.pdb')
         try:
-            os.makedirs(os.path.join(directory, id.upper()))
-        except OSError:
-            pass
-        saved_pdb = os.path.abspath(
-            os.path.join(directory, id.upper(), f'{id.upper()}.pdb'))
-        remoteaddr = f'ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/{pdbDir}/pdb{pdb_name}'
-        logger.debug(f'Inquiring the remote file {id.upper()}.pdb ...')
-        try:
-            with urlopen(remoteaddr) as remotefile:
+            with urlopen(url) as remotefile:
                 logger.debug(f'Saving as {saved_pdb} ...')
-                with open(pdb_name, 'wb') as f:
+                with open(f"{id}.ent.gz", 'wb') as f:
                     f.write(remotefile.read())
-            self.dl_id.append(id.upper())
-            subprocess.run(['gunzip', pdb_name])
-            subprocess.run(['mv', id_ent, saved_pdb])
-            logger.info(f'{id.upper()} download completed.')
+            self.dl_id.append(ID)
+            subprocess.run(['gunzip', f"{id}.ent.gz"])
+            subprocess.run(['mv', f"{id}.ent", saved_pdb])
+            logger.info(f'{ID} download completed.')
         except OSError:
-            logger.warning(f'{id.upper()} not found.')
-            self.err_id.append(id.upper())
+            logger.warning(f'{ID} not found.')
+            self.err_id.append(ID)
 
     def preprocess(self, id, directory='pdb/', backup=True):
         """
@@ -208,7 +231,7 @@ class pdb:
             f.write("\n".join(newlines))
         logger.info(f'Parameters set for {id.upper()}.')
 
-    def calc_pka(self, id, directory='./pdb'):
+    def calc_pka(self, id, directory='./pdb', clean=False):
         """ Calculate protein pKa values using MCCE.
             http://www.sci.ccny.cuny.edu/~jmao/mcce/manual.html
 
@@ -218,6 +241,8 @@ class pdb:
                 The PDB ID of the protein calculated.
             directory: str, optional
                 The parent directory for saving the file.
+            clean: bool, optional
+                Only keep the PDB file and 
 
         Returns
         -------
@@ -235,11 +260,9 @@ class pdb:
 if __name__ == '__main__':
     x = pdb()
     x.load_id()
-    for item in x.ids:
-        try:
-            x.getpdb(item)
-        except Error as e:
-            logger.error(e)
+    urls = x.get_link(x.ids)
+    with Pool(10) as p:
+        p.map(x.download_file, urls)
     subprocess.run(['find', '.', '-type', 'd', '-empty', '-delete'])
     with open('./pdb/error_pdb.list', 'w') as f:
         f.write('\n'.join(x.err_id))
@@ -252,5 +275,5 @@ if __name__ == '__main__':
         except Error as e:
             logger.error(e)
 
-    with Pool(20) as p:
+    with Pool(os.cpu_count()) as p:
         p.map(x.calc_pka, x.dl_id)
