@@ -1,4 +1,4 @@
-retrieve.ensembAnnot <- function(df, codingOnly=F) {
+retrieve.ensemblAnnot <- function(df, codingOnly=F) {
     #' Prepare for converting ensembl to gene symbol.
     #'
     #' Require biomaRt to work (retrieve annotation).
@@ -19,7 +19,7 @@ retrieve.ensembAnnot <- function(df, codingOnly=F) {
     message("Retrieving annotation data...")
     ensemblAnnot <- getBM(filters= "ensembl_gene_id",
                           attributes= c("ensembl_gene_id", "hgnc_symbol",
-                                        "gene_biotype", "description"),
+                                        "entrezgene", "gene_biotype", "description"),
                           values=ensembl, mart= mart)
     ensemblAnnot <- ensemblAnnot[ensemblAnnot$hgnc_symbol != '', ]
     if (codingOnly) {
@@ -54,7 +54,6 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     }
     ensembl <- sub("(.*)\\..*$", "\\1", rownames(df))
     library_size <- colSums(df)
-    # get collagen gene names
     if (regex != '') {
         message("Regex found, filtering...")
         ensemblAnnot <- ensemblAnnot[grep(regex, ensemblAnnot$hgnc_symbol), ]
@@ -287,7 +286,7 @@ multiplot <- function(..., plotlist=NULL, cols=1, layout=NULL) {
 }
 
 
-edgeR.de.test <- function(df1, df2, group1, group2) {
+edgeR.de.test <- function(df1, df2, group1, group2, sepLibSize=F) {
     #' Use edgeR to perform gene differential expression analysis.
     #'
     #' Require edgeR and dplyr to work.
@@ -296,20 +295,33 @@ edgeR.de.test <- function(df1, df2, group1, group2) {
     #' @param df2 Second. The result comes as df2:df1.
     #' @param group1 Name of first group.
     #' @param group2 Name of second group.
+    #' @param sepLibSize If `name.convert` has a separate library size,
+    #'                   set this to TRUE.
     library(edgeR)
-    df1 <- df1[order(rownames(df1)), ]
-    df2 <- df2[order(rownames(df2)), ]
-    group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
-    design <- model.matrix(~0+group)
-    x <- cbind(df1, df2)
-    y <- DGEList(counts=x, group=group)
+    if(sepLibSize) {
+        libSize <- c(df1$libSize, df2$libSize)
+        df1 <- df1$exp[order(rownames(df1$exp)), ]
+        df2 <- df2$exp[order(rownames(df2$exp)), ]
+        group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
+        design <- model.matrix(~0+group)
+        x <- cbind(df1, df2)
+        y <- DGEList(counts=x, group=group, lib.size=libSize)
+    }
+    else {
+        df1 <- df1[order(rownames(df1)), ]
+        df2 <- df2[order(rownames(df2)), ]
+        group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
+        design <- model.matrix(~0+group)
+        x <- cbind(df1, df2)
+        y <- DGEList(counts=x, group=group)
+    }
     y <- y[rowSums(cpm(y) > 1) >= 2, , keep.lib.sizes=F]
     y <- calcNormFactors(y)
     y <- estimateDisp(y, design=design)
     ## logFC logCPM PValue
     et <- exactTest(y)$table
     colnames(et) <- c("log2_fold_change", "log2_CPM", "p_value")
-    et$ensembl <- rownames(et)
+    et$symbol <- rownames(et)
     rownames(et) <- NULL
     return(et)
 }
