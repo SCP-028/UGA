@@ -2,11 +2,14 @@
 """
 Predict protein pKa based on MCCE method.
 http://pka.engr.ccny.cuny.edu/
+
+Require MCCE 3.0 to work: https://anaconda.org/SalahSalah/mcce/files
 """
 import locale
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -21,10 +24,6 @@ os.chdir(rootpath)
 
 logger = logging.getLogger('pKa_calc')
 logger.setLevel(logging.INFO)
-try:
-    os.makedirs('./pdb')
-except OSError:
-    pass
 handler = logging.FileHandler('./pKa_calculation.log')
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter(
@@ -46,11 +45,17 @@ class pdb:
         Get list of existing pKa values, and list of PDB files to download.
         """
         logger.debug('Loading existing pKa values...')
-        annot = pd.read_csv('./annotation/HUMAN_9606_idmapping.dat',
+        if not os.path.exists("./annotation/uniprot_id_mapping.dat"):
+            with urlopen("ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz") as remotefile:
+                logger.debug('Saving UniProt ID mapping data...')
+                with open("./annotation/uniprot_id_mapping.dat.gz", 'wb') as f:
+                    f.write(remotefile.read())
+            subprocess.run(["gunzip", "./annotation/uniprot_id_mapping.dat.gz"])
+        annot = pd.read_csv('./annotation/uniprot_id_mapping.dat',
                             sep='\t', header=None,
                             names=['uniprot', 'id', 'value'])
-        df = pd.read_csv('./annotation/database_charge.csv')
-        idKnown = df.PDB_ID
+        # df = pd.read_csv('./annotation/database_charge.csv')
+        # idKnown = df.PDB_ID
         idAll = annot.loc[annot.id == 'PDB', 'value']
         try:
             x = pd.read_csv(handler.baseFilename, sep="\t", header=None,
@@ -58,10 +63,11 @@ class pdb:
             idFinished = x.loc[x.description.str.contains(
                                r"finished", na=False), 'description']
             idFinished = idFinished.str[0:4]
-            ids = list(set(idAll) - set(idKnown) - set(idFinished))
+            ids = list(set(idAll) - set(idFinished))
         except Exception as e:
             logger.error(e)
-            ids = list(set(idAll) - set(idKnown))
+            # ids = list(set(idAll) - set(idKnown))
+            ids = list(set(idAll))
         logger.info(f'{len(ids)} PDB files need to be downloaded.')
         self.ids = ids
 
@@ -115,13 +121,13 @@ class pdb:
                 logger.debug(f'Saving as {saved_pdb} ...')
                 with open(f"{id}.ent.gz", 'wb') as f:
                     f.write(remotefile.read())
-            self.dl_id.append(ID)
+            # self.dl_id.append(ID)  # Global variables aren't shared in multiprocessing
             subprocess.run(['gunzip', f"{id}.ent.gz"])
-            subprocess.run(['mv', f"{id}.ent", saved_pdb])
+            shutil.move(f"{id}.ent", saved_pdb)
             logger.info(f'{ID} download completed.')
         except OSError:
             logger.warning(f'{ID} not found.')
-            self.err_id.append(ID)
+            # self.err_id.append(ID)
 
     def preprocess(self, id, directory='pdb/', backup=True):
         """
@@ -153,10 +159,10 @@ class pdb:
         ]
         model_start = False
         newlines = []
-        filepath = os.path.abspath(
+        filepath = os.path.realpath(
             os.path.join(directory, id.upper(), f'{id.upper()}.pdb'))
         if backup:
-            subprocess.run(['cp', filepath, f'{filepath}.bak'])
+            shutil.copy2(filepath, f'{filepath}.bak')
         with open(filepath) as f:
             for line in f:
                 if line[:5] == "MODEL":
@@ -201,16 +207,17 @@ class pdb:
         -------
             run.prm: a file describing the parameters that points to the PDB file.
         """
-        filepath = os.path.abspath(os.path.join(directory, id.upper()))
+        pkgpath = os.path.join(rootpath, "mcce3.0")
+        filepath = os.path.realpath(os.path.join(directory, id.upper()))
         newlines = []
         if quickrun:
-            subprocess.run([
-                'cp', '/home/yizhou/pkg/bin/mcce3.0/run.prm.quick',
+            shutil.copy2(
+                os.path.join(pkgpath, "run.prm.quick"),
                 os.path.join(filepath, 'run.prm')
-            ])
+            )
         else:
-            subprocess.run([
-                'cp', '/home/yizhou/pkg/bin/mcce3.0/run.prm.default',
+            shutil.copy2([
+                os.path.join(pkgpath, "run.prm.default"),
                 os.path.join(filepath, 'run.prm')
             ])
         with open(os.path.join(filepath, 'run.prm')) as f:
@@ -224,14 +231,14 @@ class pdb:
                 if line.endswith("(EPSILON_PROT)"):
                     line = re.sub(r'^[\d\.]+', r'8.0', line)
                 if line.startswith("/home/mcce/mcce3.0"):
-                    line = re.sub(r"^/.*3\.0", r"/home/yizhou/pkg/bin/mcce3.0",
+                    line = re.sub(r"^/.*3\.0", pkgpath,
                                   line)
                 newlines.append(line)
         with open(os.path.join(filepath, 'run.prm'), 'w') as f:
             f.write("\n".join(newlines))
         logger.info(f'Parameters set for {id.upper()}.')
 
-    def calc_pka(self, id, directory='./pdb', clean=False):
+    def calc_pka(self, id, directory='./pdb', clean=True):
         """ Calculate protein pKa values using MCCE.
             http://www.sci.ccny.cuny.edu/~jmao/mcce/manual.html
 
@@ -242,38 +249,68 @@ class pdb:
             directory: str, optional
                 The parent directory for saving the file.
             clean: bool, optional
-                Only keep the PDB file and 
+                Only keep the PDB file, run log and pKa output.
 
         Returns
         -------
             A set of files in a subdirectory named after the ID.
             See user manual for detail.
         """
-        os.chdir(os.path.abspath(os.path.join(rootpath, directory, id.upper())))
-        logger.info(f'{id.upper()} calculation started.')
+        id = id.upper()
+        os.chdir(os.path.realpath(os.path.join(rootpath, directory, id)))
+        logger.info(f'{id} calculation started.')
         start = time.time()
-        with open(f'{id.upper()}.run.log', 'w') as f:
+        with open(f'{id}.run.log', 'w') as f:
             subprocess.run('/home/yizhou/pkg/bin/mcce3.0/mcce', stdout=f)
-        logger.info(f'{id.upper()} calculation finished, used {time.time() - start}s.')
+        with open(f'{id}.run.log', 'rb') as f:
+            last = f.readlines()[-1].decode().lstrip()
+        if last.startswith(("Fatal", "FATAL", "WARNING", "STOP")):
+            logger.warning(f'{id} calculation aborted after {time.time() - start}s, due to {last}')
+        else:
+            logger.info(f'{id} calculation finished, used {time.time() - start}s.')
+            shutil.move("pK.out", os.path.join(rootpath, "result", f"{id}.pka"))
+        if clean:
+            del_list = [i for i in os.listdir() if i not in ("pK.out", f"{id}.run.log", f"{id}.pdb.bak")]
+            [os.remove(item) for item in del_list]
 
 
 if __name__ == '__main__':
+    for folder in ["./pdb", "./annotation"]:
+        try:
+            os.makedirs(folder)
+        except OSError:
+            pass
     x = pdb()
     x.load_id()
     urls = x.get_link(x.ids)
-    with Pool(10) as p:
+    with Pool(10) as p:  # TODO: Change this part to multithread
         p.map(x.download_file, urls)
     subprocess.run(['find', '.', '-type', 'd', '-empty', '-delete'])
+    # Workaround for multiprocessing the download and finding downloaded files
+    x.dl_id = [item for item in os.listdir(os.path.join(rootpath, "pdb")) if not item.endswith("list")]
+    x.err_id = list(set(x.ids) - set(x.dl_id))
     with open('./pdb/error_pdb.list', 'w') as f:
         f.write('\n'.join(x.err_id))
     with open('./pdb/downloaded_pdb.list', 'w') as f:
         f.write('\n'.join(x.dl_id))
+    if not os.path.exists(os.path.join(rootpath, "mcce3.0")):
+        if not os.path.exists(os.path.join(rootpath, "mcce3.0.tar.bz2")):
+            with urlopen("https://anaconda.org/SalahSalah/mcce/3.0/download/linux-64/mcce-3.0-0.tar.bz2") as remotefile:
+                with open("./mcce-3.0-0.tar.bz2", 'wb') as f:
+                    f.write(remotefile.read())
+        subprocess.run(["tar", "-xjf", "mcce-3.0-0.tar.bz2"])
+        shutil.move("./info/recipe/mcce3.0", "./mcce3.0")
+        shutil.rmtree(os.path.join(rootpath, "info"), ignore_errors=True)
+        shutil.rmtree(os.path.join(rootpath, "bin"), ignore_errors=True)
     for item in x.dl_id:
         try:
             x.preprocess(item)
             x.set_params(item)
-        except Error as e:
+        except Exception as e:
             logger.error(e)
-
+    try:
+        os.makedirs("./result")
+    except OSError:
+        pass
     with Pool(os.cpu_count()) as p:
         p.map(x.calc_pka, x.dl_id)
