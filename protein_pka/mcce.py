@@ -106,7 +106,7 @@ class pdb:
         logger.info(
             f"{len(self.download_ids)} PDB files need to be downloaded.")
 
-    def get_link(self, ids, directory="pdb/"):
+    def get_link(self, ids):
         """ Get PDB file links from:
             ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/ ,
             and create folders to store the files.
@@ -115,8 +115,6 @@ class pdb:
         ----------
             ids: list
                 The PDB IDs to download.
-            directory: str, optional
-                The parent directory for saving the file.
 
         Returns
         -------
@@ -340,7 +338,7 @@ class pdb:
             other scripts to work with if this is the first instance.
         """
         if os.path.isfile(os.path.join(ROOTPATH, "results", "working_ids.list")):
-            with open(os.path.join(ROOTPATH, "results", f"working_ids.list{num}"), "w") as f:
+            with open(os.path.join(ROOTPATH, "results", f"working_ids.list{num}"), "r") as f:
                 self.working_ids = [line.strip() for line in f]
         else:
             n = math.ceil(len(self.ready_ids) / 10)
@@ -352,12 +350,13 @@ class pdb:
                     ROOTPATH, "results", f"working_ids.list{i}"))
                 with open(os.path.join(ROOTPATH, "results", f"working_ids.list{i}"), "w") as f:
                     f.write("\n".join(ids))
-                logger.debug(f"Saved {len(ids) IDs to file working_ids.list{i} .")
+                logger.debug(
+                    f"Saved {len(ids)} IDs to file working_ids.list{i} .")
             with open(os.path.join(ROOTPATH, "results", "working_ids.list"), "w") as f:
                 f.write("\n".join(metafile))
             self.working_ids = self.working_ids[num]
 
-    def calc_pka(self, id, directory="./pdb", clean=True):
+    def calc_pka(self, id, clean=True):
         """ Calculate protein pKa values using MCCE.
             http://www.sci.ccny.cuny.edu/~jmao/mcce/manual.html
 
@@ -365,8 +364,6 @@ class pdb:
         ----------
             id: str
                 The PDB ID of the protein calculated.
-            directory: str, optional
-                The parent directory for saving the file.
             clean: bool, optional
                 Only keep the PDB file, run log and pKa output.
 
@@ -376,7 +373,7 @@ class pdb:
             See user manual for detail.
         """
         id = id.upper()
-        os.chdir(os.path.realpath(os.path.join(ROOTPATH, directory, id)))
+        os.chdir(os.path.realpath(os.path.join(ROOTPATH, "pdb", id)))
         logger.info(f"{id} calculation started.")
         start = time.time()
         with open(f"{id}.run.log", "w") as f:
@@ -416,7 +413,7 @@ if __name__ == "__main__":
         except Exception as e:
             x.error_ids.append(id)
             logger.warning(f"Preprocess of {id}: {e}")
-    subprocess.run(["find", ".", "-type", "d", "-empty", "-delete"])
+    # subprocess.run(["find", ".", "-type", "d", "-empty", "-delete"])
 
     x.split_ready_ids(0)  # 0 - 9, run 0 first to generate other lists
 
