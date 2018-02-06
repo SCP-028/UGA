@@ -188,11 +188,17 @@ exp.boxplot <- function(datan, datat, proj, annot) {
         # Calculate mean of each group
         df <- df %>% group_by(symbol) %>% mutate(meanFPKM=mean(log2FPKM))
         # Each group is compared to the mean value
+        comparisons <- list(c("i", "control"), c("ii", "i"),
+                            c("iii", "ii"), c("iv", "iii"))
         p <- ggplot(df, aes(stage, log2FPKM))+
-                geom_boxplot()+
+                geom_boxplot(aes(fill=stage))+
                 facet_wrap(facets = "symbol")+
-                stat_compare_means(ref.group="control", label="p.signif")+
-                geom_hline(aes(yintercept = meanFPKM), linetype = 2)+
+                # stat_compare_means(ref.group="control", label="p.signif",
+                #                    hide.ns=T, show.legend=T)+
+                stat_compare_means(comparisons=comparisons, label="p.signif",
+                                   hide.ns=T)+
+                geom_hline(aes(yintercept = meanFPKM, color="red"),
+                               linetype = 2)+
                 ggtitle(proj)
         message(paste0(proj, " boxplot finished."))
         return(p)
@@ -217,6 +223,7 @@ result <- foreach(i = seq_along(filenames),
         ggsave(filename=paste0("./glycosylation/", projects[i], ".tiff"),
                plot=p, device="tiff", width=16, height=9, units="in", dpi=200)
     }
+    return(p)
 }
 close(pb)
 stopCluster(cl)

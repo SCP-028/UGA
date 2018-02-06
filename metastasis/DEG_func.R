@@ -2,7 +2,7 @@ retrieve.ensemblAnnot <- function(df, codingOnly=F) {
     #' Prepare for converting ensembl to gene symbol.
     #'
     #' Require biomaRt to work (retrieve annotation).
-    #'  
+    #'
     #' @param df The data frame whose rownames are to be converted.
     #' @param codingOnly Keep only the protein-coding genes and ditch the rest.
     #'
@@ -36,7 +36,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     #' Convert ensembl to gene symbol.
     #'
     #' Require dplyr to work (uses inner_join function).
-    #'  
+    #'
     #' @param df The data frame whose rownames are to be converted.
     #' @param ensemblAnnot Annotation data.frame from `retrieve.ensembAnnot`.
     #' @param codingOnly Keep only the protein-coding genes and ditch the rest.
@@ -96,7 +96,7 @@ transform.data <- function(df, annot, project) {
     #' Separate different stages, and melt for ggplot.
     #'
     #' Require reshape2 to work (uses melt function).
-    #'  
+    #'
     #' @param df The data frame whose rownames are to be converted.
     #' @param annot Stage information.
     #' @param project The TCGA project name.
@@ -129,7 +129,7 @@ exp.boxplot <- function(datan, datat, proj, annot) {
     #'
     #' Require dplyr to work (uses inner_join function).
     #' Require ggplot2 & ggpubr to finish the boxplots.
-    #'  
+    #'
     #' @param datan The data frame for normal samples.
     #' @param datat The data frame for tumor samples.
     #' @param proj The current cancer project.
@@ -185,7 +185,7 @@ exp.boxplot <- function(datan, datat, proj, annot) {
 
 prep.cor.heatmap <- function(df, genelist, cluster=F,
                              sample=c("normal", "tumor")) {
-    #' Calculate spearman correlation coefficients and cluster. 
+    #' Calculate spearman correlation coefficients and cluster.
     #'
     #' @param df The input values.
     #' @param genelist Used for arranging the order of the genes.
@@ -200,7 +200,7 @@ prep.cor.heatmap <- function(df, genelist, cluster=F,
     if (cluster) {
         dd <- as.dist((1 - df) / 2)
         hc <- hclust(dd)
-        df <- df[hc$order, hc$order]    
+        df <- df[hc$order, hc$order]
     }
     df[upper.tri(df)] <- NA
     df <- melt(df, na.rm=T)
@@ -242,6 +242,7 @@ nice.heatmap <- function(df, title) {
 }
 
 
+# Or just use `ggarrange(p1, p2, col=2)` in `ggpubr`
 multiplot <- function(..., plotlist=NULL, cols=1, layout=NULL) {
     #' http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_(ggplot2)/
     #'
@@ -290,7 +291,7 @@ edgeR.de.test <- function(df1, df2, group1, group2, sepLibSize=F) {
     #' Use edgeR to perform gene differential expression analysis.
     #'
     #' Require edgeR and dplyr to work.
-    #' 
+    #'
     #' @param df1 First data frame / matrix. Must be counts value!!
     #' @param df2 Second. The result comes as df2:df1.
     #' @param group1 Name of first group.

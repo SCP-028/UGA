@@ -4,3 +4,5 @@
 *.tgz
 DNA_Methylation/.RData
 .vscode/
+.Rproj.user
+*.Rproj
