@@ -1,7 +1,15 @@
-# Arginine metabolism.
+# Polyamine (putrescine, spermidine and spermine) metabolism.
 library(glue)
 setwd("C:/Users/yz73026/Desktop")
-GENELIST <- c("ARG1", "ARG2", "ASS1", "ASL")
+GENELIST <- c(
+    "ODC1",  # Ornithine Decarboxylase 1, rate limiting for ornithine -> putrescine
+    "SRM",  # Spermidine Synthase, putrescine -> spermidine
+    "SMS",  # Spermine Synthase, soermidine -> spermine
+    "SLC3A2",  # Polyamine exporter
+    # Urea Cycle
+    "CPS1", "SLC25A15", "OTC", "ASS1", "ASL", "ARG1",
+    "SLC14A2", "SLC14A1")
+
 stageAnnot <- read.csv("./expression_FPKM/annotation/annot.csv")
 
 
@@ -162,17 +170,17 @@ df <- result %>%
     mutate(meanFPKM=mean(FPKM))
 projects <- projects[projects %in% df$project]
 
-setwd("./arginine")
+setwd("./polyamine_urea")
 for (i in seq_along(projects)) {
     temp <- df[df$project == projects[i], ]
     temp$stage <- factor(temp$stage, levels=c("control", "i", "ii", "iii", "iv"))
-    temp$symbol <- factor(temp$symbol, levels=c("ARG1", "ARG2", "ASS1", "ASL"))
+    temp$symbol <- factor(temp$symbol, levels=GENELIST)
     temp$meanFPKM[temp$stage != "control"] <- NA
     # Violin plot
     p <- facet(ggviolin(
         temp, x="stage", y="FPKM", fill="stage",
         add="boxplot", add.params = list(color="black", fill = "white")
-         ), facet.by="symbol", nrow=1, ncol=4)
+         ), facet.by="symbol", nrow=3, ncol=4)
     # Add t-test significance
     p <- p+
          stat_compare_means(
@@ -187,7 +195,7 @@ for (i in seq_along(projects)) {
         p, xlab="Stages", ylab="log2(FPKM + 0.1)", title=projects[i],
         legend="right", legend.title="", palette="npg", ggtheme=theme_light())
     ggsave(filename=glue("{projects[i]}.tiff"),
-           plot=p, device="tiff", width=16, height=4, units="in", dpi=300)
+           plot=p, device="tiff", width=16, height=12, units="in", dpi=300)
 }
 
 # sessionInfo()

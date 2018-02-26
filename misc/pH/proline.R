@@ -1,7 +1,13 @@
-# Arginine metabolism.
+# Proline metabolism.
 library(glue)
 setwd("C:/Users/yz73026/Desktop")
-GENELIST <- c("ARG1", "ARG2", "ASS1", "ASL")
+GENELIST <- c(
+    # Synthesis from Glutamate / Ornithine
+    "ALDH18A1", "OAT", "PYCR1", "PYCR2", "PYCR3",
+    # Oxidation to Glutamate
+    "PRODH", "ALDH4A1"
+)
+
 stageAnnot <- read.csv("./expression_FPKM/annotation/annot.csv")
 
 
@@ -162,17 +168,17 @@ df <- result %>%
     mutate(meanFPKM=mean(FPKM))
 projects <- projects[projects %in% df$project]
 
-setwd("./arginine")
+setwd("./proline")
 for (i in seq_along(projects)) {
     temp <- df[df$project == projects[i], ]
     temp$stage <- factor(temp$stage, levels=c("control", "i", "ii", "iii", "iv"))
-    temp$symbol <- factor(temp$symbol, levels=c("ARG1", "ARG2", "ASS1", "ASL"))
+    temp$symbol <- factor(temp$symbol, levels=GENELIST)
     temp$meanFPKM[temp$stage != "control"] <- NA
     # Violin plot
     p <- facet(ggviolin(
         temp, x="stage", y="FPKM", fill="stage",
         add="boxplot", add.params = list(color="black", fill = "white")
-         ), facet.by="symbol", nrow=1, ncol=4)
+         ), facet.by="symbol", nrow=2, ncol=5)
     # Add t-test significance
     p <- p+
          stat_compare_means(
@@ -187,7 +193,7 @@ for (i in seq_along(projects)) {
         p, xlab="Stages", ylab="log2(FPKM + 0.1)", title=projects[i],
         legend="right", legend.title="", palette="npg", ggtheme=theme_light())
     ggsave(filename=glue("{projects[i]}.tiff"),
-           plot=p, device="tiff", width=16, height=4, units="in", dpi=300)
+           plot=p, device="tiff", width=20, height=8, units="in", dpi=300)
 }
 
 # sessionInfo()
