@@ -68,7 +68,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     }
     df$ensembl_gene_id <- ensembl
     df <- inner_join(ensemblAnnot, df, by = "ensembl_gene_id")
-    df <- df[order(rowSums(df[ ,grep("TCGA", colnames(df))]), decreasing=T), ]
+    df <- df[order(rowSums(df[ ,grep("(TCGA)|(TARGET)", colnames(df))]), decreasing=T), ]
     df <- df[!duplicated(df$hgnc_symbol), ]
     rownames(df) <- df$hgnc_symbol
     df$hgnc_symbol <- NULL
@@ -77,7 +77,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
             return(list(exp=df, libSize=library_size))
         }
         else {
-            return(list(exp=df[ ,grep("TCGA", colnames(df))],
+            return(list(exp=df[ ,grep("(TCGA)|(TARGET)", colnames(df))],
                         libSize=library_size))
         }
     }
@@ -86,7 +86,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
             return(df)
         }
         else {
-            return(df[ ,grep("TCGA", colnames(df))])
+            return(df[ ,grep("(TCGA)|(TARGET)", colnames(df))])
         }
     }
 }
@@ -288,35 +288,36 @@ multiplot <- function(..., plotlist=NULL, cols=1, layout=NULL) {
 
 
 edgeR.de.test <- function(df1, df2, group1, group2, sepLibSize=F) {
-    #' Use edgeR to perform gene differential expression analysis.
-    #'
-    #' Require edgeR and dplyr to work.
-    #'
-    #' @param df1 First data frame / matrix. Must be counts value!!
-    #' @param df2 Second. The result comes as df2:df1.
-    #' @param group1 Name of first group.
-    #' @param group2 Name of second group.
-    #' @param sepLibSize If `name.convert` has a separate library size,
-    #'                   set this to TRUE.
-    library(edgeR)
-    if(sepLibSize) {
-        libSize <- c(df1$libSize, df2$libSize)
-        df1 <- df1$exp[order(rownames(df1$exp)), ]
-        df2 <- df2$exp[order(rownames(df2$exp)), ]
-        group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
-        design <- model.matrix(~0+group)
-        x <- cbind(df1, df2)
-        y <- DGEList(counts=x, group=group, lib.size=libSize)
-    }
-    else {
-        df1 <- df1[order(rownames(df1)), ]
-        df2 <- df2[order(rownames(df2)), ]
-        group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
-        design <- model.matrix(~0+group)
-        x <- cbind(df1, df2)
-        y <- DGEList(counts=x, group=group)
-    }
-    y <- y[rowSums(cpm(y) > 1) >= 2, , keep.lib.sizes=F]
+  #' Use edgeR to perform gene differential expression analysis.
+  #'
+  #' Require edgeR and dplyr to work.
+  #'
+  #' @param df1 First data frame / matrix. Must be counts value!!
+  #' @param df2 Second. The result comes as df2:df1.
+  #' @param group1 Name of first group.
+  #' @param group2 Name of second group.
+  #' @param sepLibSize If `name.convert` has a separate library size,
+  #'                   set this to TRUE.
+  library(edgeR)
+  if(sepLibSize) {
+    libSize <- c(df1$libSize, df2$libSize)
+    df1 <- df1$exp[order(rownames(df1$exp)), ]
+    df2 <- df2$exp[order(rownames(df2$exp)), ]
+    group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
+    design <- model.matrix(~0+group)
+    x <- cbind(df1, df2)
+    y <- DGEList(counts=x, group=group, lib.size=libSize)
+  }
+  else {
+    df1 <- df1[order(rownames(df1)), ]
+    df2 <- df2[order(rownames(df2)), ]
+    group <- c(rep(group1, ncol(df1)), rep(group2, ncol(df2)))
+    design <- model.matrix(~0+group)
+    x <- cbind(df1, df2)
+    y <- DGEList(counts=x, group=group)
+  }
+  y <- y[rowSums(cpm(y) >= 1) >= 1, , keep.lib.sizes=F]
+  if (nrow(y$counts) > 1) {
     y <- calcNormFactors(y)
     y <- estimateDisp(y, design=design)
     ## logFC logCPM PValue
@@ -324,7 +325,11 @@ edgeR.de.test <- function(df1, df2, group1, group2, sepLibSize=F) {
     colnames(et) <- c("log2_fold_change", "log2_CPM", "p_value")
     et$symbol <- rownames(et)
     rownames(et) <- NULL
-    return(et)
+    return (et)
+  }
+  else {
+    return (NA)
+  }
 }
 
 
