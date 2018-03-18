@@ -2,13 +2,13 @@
 # how many protons were contributed by the protein.
 # Need http://www.uniprot.org/uploadlists/ to convert IDs.
 rm(list=ls())
-setwd("~/data/protein_pka")
+setwd("C:/Users/yz73026/Desktop/protein_pka/KAUST/result")
 require(dplyr)
-require(tidyr)
-require(ggplot2)
+require(glue)
+require(ggpubr)
 
-df <- data.table::fread("./pKa.csv", stringsAsFactors = F,
-                        data.table = F, header = T, sep = ",")
+df <- data.table::fread("./pka_dataframe.csv",
+                        stringsAsFactors = F, data.table = F, header = T, sep = ",")
 acidic <- c("ASP", "GLU")
 basic <- c("ARG", "LYS", "HIS")
 
@@ -22,160 +22,69 @@ eq_base <- function(pKa, pH) {
 
 # Calculate net charge
 df <- df %>%
-  mutate(aa = sub("_.*$", "", Residue)) %>%
-  filter(aa %in% c(acidic, basic)) %>%
-  mutate(charge = ifelse(aa %in% acidic,
-                         eq_acid(pKa, 7.0),
-                         eq_base(pKa, 7.0))) %>%
-  group_by(PDB_ID) %>%
-  summarise(total_charge = sum(charge))
+  filter(Residue %in% c(acidic, basic)) %>%
+  mutate(Charge = ifelse(Residue %in% acidic,
+                         eq_acid(pK, 7.0),
+                         eq_base(pK, 7.0))) %>%
+  group_by(Protein) %>%
+  summarise(Total_charge = sum(Charge))
 write.csv(df, file="./database_charge_pH7.0.csv", quote = F, row.names = F)
 
 # Map to Ensembl gene ID
 # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz
-annot <- data.table::fread("../annotation/HUMAN_9606_idmapping.dat", sep = "\t",
-                           stringsAsFactors = F, data.table = F, header = F)
-colnames(annot) <- c("uniprot", "database", "ID")
-uniprot_pdb <- annot %>%
+ensemblAnnot <- data.table::fread("C:/Users/yz73026/Desktop/annotation/HUMAN_9606_idmapping.dat",
+                           sep = "\t", stringsAsFactors = F, data.table = F, header = F)
+colnames(ensemblAnnot) <- c("uniprot", "database", "ID")
+uniprot_pdb <- ensemblAnnot %>%
   filter(database == "PDB") %>%
-  rename(PDB_ID = ID) %>%
-  select(PDB_ID, uniprot)
-df <- left_join(df, uniprot_pdb, by = "PDB_ID")
-uniprot_ensembl <- annot %>%
+  rename(Protein = ID) %>%
+  select(Protein, uniprot)
+df <- left_join(df, uniprot_pdb, by = "Protein")
+uniprot_ensembl <- ensemblAnnot %>%
   filter(database == "Ensembl") %>%
   rename(ensembl = ID) %>%
   select(ensembl, uniprot)
 df <- inner_join(df, uniprot_ensembl, by = "uniprot")
+df <- df %>%
+  select(ensembl, Total_charge) %>%
+    group_by(ensembl) %>%
+    summarise(Net_charge=mean(Total_charge))
+write.csv(df, file="./ensembl_charge_pH7.0.csv", quote=F, row.names=F)
 
 # Expression data and cancer stage information
-load("../expression_FPKM/BRCA.RData")
-annot <- data.table::fread("../expression_FPKM/annotation/annot.tsv", data.table = F,
-                           stringsAsFactors = F, header = T)
-
-transform.data <- function(df, annot, project) {
-  #' Separate different stages, and melt for ggplot.
-  #'
-  #' Require reshape2 to work (uses melt function).
-  #'  
-  #' @param df The data frame whose rownames are to be converted.
-  #' @param annot Stage information.
-  #' @param project The TCGA project name.
-  #'
-  #' @return A melted data.frame with different stages.
-  library(reshape2)
-  # df <- df[rowSums(df == 0) <= (ncol(df) / 2), ]
-  df$symbol <- rownames(df)
-  df <- melt(df, id.vars = "symbol")
-  df$stage <- 0
-  stage1 <- annot$barcode[grepl("(^i$)|(\\si[abc]?$)|(1)", annot$tumor_stage) &
-                            annot$project == project]
-  stage2 <- annot$barcode[grepl("(^ii$)|(\\si{2}[abc]?$)|(2)", annot$tumor_stage) &
-                            annot$project == project]
-  stage3 <- annot$barcode[grepl("(^iii$)|(\\si{3}[abc]?$)|(3)", annot$tumor_stage) &
-                            annot$project == project]
-  stage4 <- annot$barcode[grepl("(^iv$)|(\\siv[abc]?$)|(4)", annot$tumor_stage) &
-                            annot$project == project]
-  df$stage[df$variable %in% stage1] <- "i"
-  df$stage[df$variable %in% stage2] <- "ii"
-  df$stage[df$variable %in% stage3] <- "iii"
-  df$stage[df$variable %in% stage4] <- "iv"
-  df <- df[df$stage != 0, ]
-  return(df)
+filenames <- list.files("C:/Users/yz73026/Desktop/expression_FPKM/", pattern=".RData$", full.names = T)
+projects <- sub(".*/([A-Z-]+)\\.RData", "\\1", filenames)
+for (i in seq_along(projects)) {
+  load(filenames[i])  # datan, datat, annot
+  rownames(datan) <- rownames(datat) <- sub("\\..*$", "", rownames(datan))
+  datan <- rowMeans(datan[rownames(datan) %in% df$ensembl, ])
+  datat <- rowMeans(datat[rownames(datat) %in% df$ensembl, ])
+  datan <- data.frame(ensembl=names(datan), expression=datan)
+  datat <- data.frame(ensembl=names(datat), expression=datat)
+  dfn <- inner_join(datan, df, by="ensembl")
+  dft <- inner_join(datat, df, by="ensembl")
+  dfn <- dfn %>%
+    mutate(
+      charge_expression=ifelse(Net_charge >= 0,
+                               log2(Net_charge * expression + 0.1),
+                               -log2(-Net_charge * expression + 0.1)
+                               ),
+      sample="control",
+      project=projects[i]
+    )
+  dft <- dft %>%
+    mutate(
+      charge_expression=ifelse(Net_charge >= 0,
+                               log2(Net_charge * expression + 0.1),
+                               -log2(-Net_charge * expression + 0.1)
+                               ),
+      sample="tumor",
+      project=projects[i]
+    )
+  result <- rbind.data.frame(dfn, dft)
+  p <- ggdensity(result, x = "charge_expression", add="mean", fill="sample", color="sample")
+  p <- ggpar(p, ggtheme=theme_minimal(), palette = c("#00AFBB", "#E7B800"),
+             title=projects[i], xlab="log2 (Net charge * expression + 0.1)", ylab="Density")
+  ggsave(filename=glue("{projects[i]}.tiff"),
+           plot=p, device="tiff", width=10, height=6, units="in", dpi=200)
 }
-
-process_exp <- function(exp, charge, annot, sample) {
-  require(reshape2)
-  exp <- exp[sub("\\..*$", "", rownames(exp)) %in% charge$ensembl, ]
-  if (sample == "normal") {
-    # exp <- exp[rowSums(exp == 0) <= (ncol(exp) / 2), ]
-    exp$symbol <- rownames(exp)
-    exp <- melt(exp, id.vars = "symbol")
-    exp$stage <- "control"
-  }
-  else {
-    exp <- transform.data(exp, annot, "BRCA")
-  }
-  exp$symbol <- sub("\\..*$", "", exp$symbol)
-  return(exp)
-}
-
-dfn <- process_exp(datan, df, annot, "normal")
-dft <- process_exp(datat, df, annot, "tumor")
-exp <- rbind.data.frame(dfn, dft)
-exp <- exp %>%
-  group_by(symbol, stage) %>%
-  summarise(expression = mean(value)) %>%
-  rename(ensembl = symbol)
-df <- df %>%
-  select(ensembl, total_charge) %>%
-  group_by(ensembl) %>%
-  summarise(net_charge = mean(total_charge))
-df <- inner_join(df, exp, by = "ensembl")
-df <- df %>%
-  mutate(expression = log2(expression + 0.1)) %>%
-  mutate(value = expression * net_charge)
-
-# Net charge distribution
-x <- select(df, ensembl, net_charge)
-x <- x[!duplicated(x$ensembl), ]
-x$ensembl <- factor(x$ensembl, levels=x$ensembl[order(x$net_charge)])
-chrg_dist <- ggplot(x, aes(ensembl, net_charge)) +
-             geom_col() +
-             theme(axis.text.x = element_blank()) +
-             xlab("Gene") +
-             ylab("Net Charge") +
-             ggtitle("Protein net charge distribution")
-ggsave(chrg_dist, filename = "./charge_distribution_pH7.0.tiff", device = "tiff",
-       width = 16, height= 9, units = "in", dpi = 200)
-
-# Expression distribution
-x <- x[order(x$net_charge), ]
-df$ensembl <- factor(df$ensembl, levels=x$ensembl)
-exp_dist <- ggplot(df, aes(ensembl, expression, color=stage)) +
-            geom_col() +
-            geom_vline(xintercept = tail(which(abs(x$net_charge) <= 0.0001),1),
-                       linetype = "dotted") +
-            facet_wrap(~stage) +
-            theme(axis.text.x = element_blank()) +
-            xlab("Gene") +
-            ylab("log2(FPKM + 0.1)") +
-            ggtitle("Gene Expression Distribution")
-ggsave(exp_dist, filename = "./expression_distribution.tiff", device = "tiff",
-       width = 16, height= 9, units = "in", dpi = 200)
-
-# Protein net charge * expression
-exp_chrg <- ggplot(df, aes(value, color=stage)) +
-            geom_density() +
-            xlab("Net Charge * Expression")+
-            ggtitle("Charge * Expression Distribution")
-ggsave(exp_chrg, filename = "./exp_charge_pH7.0.tiff", device = "tiff",
-       width = 12, height= 9, units = "in", dpi = 200)
-
-# Expression distribution, but continous data to catagorical data
-df <- df %>%
-      mutate(charge = cut(net_charge,
-                      seq((floor(min(df$net_charge) / 10) * 10),
-                          (ceiling(max(df$net_charge) / 10) * 10),
-                          10)))
-counts <- df %>% 
-          group_by(charge, stage) %>%
-          tally() %>%
-          filter(stage == "ii")
-exp_sum <- df %>%
-           group_by(charge, stage) %>%
-           summarise(total_exp = round(sum(expression), 2))
-exp_catg_chrg <- ggplot(df, aes(charge, expression, fill = stage)) +
-                 geom_boxplot() +
-                 geom_text(data=counts, aes(label = n,
-                                            y = max(df$expression) + 1.6),
-                           position = position_dodge(0.9)) +
-                 geom_text(data = exp_sum,
-                           aes(label = total_exp,
-                               y = max(df$expression) + 0.6),
-                           position = position_dodge(0.9),
-                           angle = 45) +
-                 xlab("Net Charge") +
-                 ylab("log2(expression + 0.1)") +
-                 ggtitle("Gene Expression Distribution at pH = 7.0")
-ggsave(exp_catg_chrg, filename = "./exp_catagory_pH7.0.tiff", device = "tiff",
-       width = 16, height = 9, units = "in", dpi = 200)
