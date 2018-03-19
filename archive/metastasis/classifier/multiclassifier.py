@@ -8,12 +8,12 @@ breast cancer, using their fpkm expression values.
 import os
 import random
 import numpy as np
-from lib.data_process import *
-from lib.visualize import *
-from lib.logistic import *
-from lib.neural_network import *
-from lib.svm import *
-from lib.fm import *
+from libs.data_process import *
+from libs.visualize import *
+from libs.logistic import *
+from libs.neural_network import *
+from libs.svm import *
+from libs.fm import *
 
 os.chdir("C:/Users/jzhou/Desktop/")
 random.seed(317)
