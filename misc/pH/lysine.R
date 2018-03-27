@@ -11,10 +11,10 @@ GENELIST <- c(
     "GCDH",  # Glutaryl-CoA Dehydrogenase
     "ECHS1",  # Enoyl-CoA Hydratase, Short Chain 1
     "EHHADH",  # Enoyl-CoA Hydratase And 3-Hydroxyacyl CoA Dehydrogenase
-    "HADHA",  # 	Hydroxyacyl-CoA Dehydrogenase (Trifunctional Protein), Alpha Subunit
-    "HADH",  # 	Hydroxyacyl-CoA Dehydrogenase
-    "ACAT1",  # 	Acetyl-CoA Acetyltransferase 1
-    "ACAT2"  # 	Acetyl-CoA Acetyltransferase 2
+    "HADHA",  # Hydroxyacyl-CoA Dehydrogenase (Trifunctional Protein), Alpha Subunit
+    "HADH",  # Hydroxyacyl-CoA Dehydrogenase
+    "ACAT1",  # Acetyl-CoA Acetyltransferase 1
+    "ACAT2"  # Acetyl-CoA Acetyltransferase 2
 )
 
 stageAnnot <- read.csv("./expression_FPKM/annotation/annot.csv")

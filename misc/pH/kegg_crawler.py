@@ -32,15 +32,24 @@ import json
 
 import requests
 
-PATHWAYNAME = 'Arginine'
-REACTANT = ["L-arginine", "ADMA", "L-Citrulline", "argininosuccinate",
-            "L-arginine", "agmatine", "putrescine", "spermidine",
-            "spermine", "diacetylspermine", "putrescine", "proline",
-            "1-Pyrroline-5-carboxylate", "L-Glutamate 5-semialdehyde"]
-PRODUCT = ["ADMA", "L-Citrulline", "argininosuccinate", "L-arginine",
-           "agmatine", "putrescine", "spermidine", "spermine",
-           "diacetylspermine", "N8-acetylspermidine", "ornithine",
-           "1-Pyrroline-5-carboxylate", "L-Glutamate 5-semialdehyde", "ornithine"]
+# PATHWAYNAME = 'Arginine'
+# REACTANT = ["L-arginine", "ADMA", "L-Citrulline", "argininosuccinate",
+#             "L-arginine", "agmatine", "putrescine", "spermidine",
+#             "spermine", "diacetylspermine", "putrescine", "proline",
+#             "1-Pyrroline-5-carboxylate", "L-Glutamate 5-semialdehyde"]
+# PRODUCT = ["ADMA", "L-Citrulline", "argininosuccinate", "L-arginine",
+#            "agmatine", "putrescine", "spermidine", "spermine",
+#            "diacetylspermine", "N8-acetylspermidine", "ornithine",
+#            "1-Pyrroline-5-carboxylate", "L-Glutamate 5-semialdehyde", "ornithine"]
+PATHWAYNAME = "Tryptophan"
+REACTANT = [
+    "tryptophan", "formylkynurenine", "kynurenine", "kynurenine",
+    "3-Hydroxykynurenine", "3-Hydroxyanthranilate"
+]
+PRODUCT = [
+    "formylkynurenine", "kynurenine", "kynurenic acid", "3-Hydroxykynurenine",
+    "3-Hydroxyanthranilate", "Quinolinate"
+]
 METABOLITE = set(REACTANT + PRODUCT)
 
 SS = requests.Session()
