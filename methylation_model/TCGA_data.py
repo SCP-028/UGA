@@ -61,15 +61,13 @@ class TCGADownload:
             with open("manifest.tsv", "w") as f:
                 f.write(r.text)
         df = pd.read_table("manifest.tsv")
-        url = self.url + "data/"
         logging.info(f"Manifest file contains {df.filename.count()} files.")
         # exclude existing files
         self.finished = glob.glob("./**/*.methy.*", recursive=True)
         self.finished = [x.rsplit("/", 1)[-1] for x in self.finished]
         logging.info(f"{len(self.finished)} files already exist, downloading the rest...")
         df = df[~df.filename.isin(self.finished)]
-        uuid = df.id.tolist()
-        self.download = [url + x for x in uuid]
+        self.download = df.id.tolist()
         return df
 
     def download_queue(self, urls):
@@ -183,5 +181,6 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(ROOTPATH, "download"))
     except OSError:
         pass
-    x.download_queue(x.download)
+    urls = x.url + "data/"
+    x.download_queue(urls)
     annot, annotDict = x.retrieve_annotation(df)
