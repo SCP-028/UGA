@@ -1,7 +1,0 @@
-library(DSS)
-require(bsseq)
-setwd("/lustre1/yz73026/")
-load("./DSS.RData")
-BSobj <- makeBSseqData(list(datat,datan),c("cancer","normal"))
-dmlTest <- DMLtest(BSobj,group1="cancer",group2="normal",smoothing=T)
-write.table(dmlTest,"./dmlTest")

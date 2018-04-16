@@ -1,0 +1,405 @@
+﻿source,interaction,target,description
+Glucose,cr,GCK,glucokinase
+GCK,rc,Glc-6-P,
+Glc-6-P,cr,GPI,Glucose-6-Phosphate Isomerase
+GPI,rc,Fructose-6-P,
+Glc-6-P,cr,PGM1,Phosphoglucomutase 1
+PGM1,rc,Glc-1-P,
+Glc-6-P,cr,PGLS,6-Phosphogluconolactonase
+PGLS,rc,6-Phosphogluconate,
+6-Phosphogluconate,cr,PGD,Phosphogluconate dehydrogenase
+PGD,rc,Ribulose-5-P,
+Ribulose-5-P,cr,RPIA,Ribose-5-phosphate isomerase
+RPIA,rc,Ribose-5-P,
+Ribose-5-P,cr,TALDO1,Transaldolase 1
+TALDO1,pp,TKT,Transketolase
+TALDO1,rc,Fructose-6-P,
+Fructose-6-P,cr,GFPT1,Glutamine--Fructose-6-Phosphate Transaminase 
+GFPT1,pp,GFPT2,
+GFPT1,rc,GlcN-6-P,
+Fructose-6-P,cr,MPI,Mannose Phosphate Isomerase
+MPI,rc,Man-6-P,
+Fructose-6-P,cr,PFKM,"Phosphofructokinase, Muscle"
+PFKM,pp,PFKL,"Phosphofructokinase, Liver Type"
+PFKL,pp,PFKP,"Phosphofructokinase, Platelet"
+PFKM,rc,"Fructose-1,6-diphosphate",
+"Fructose-1,6-diphosphate",cr,FBP1,Fructose-Bisphosphatase 1
+FBP1,rc,Fructose-6-P,
+Ribose-5-P,cr,PRPS1,Phosphoribosyl Pyrophosphate Synthetase 1
+PRPS1,rc,Phosphoribosyl pyrophosphate,
+Phosphoribosyl pyrophosphate,cc,IMP,
+IMP,cc,XMP,
+XMP,cc,GMP,
+GMP,cc,GDP,
+GDP,cc,GTP,
+Phosphoribosyl pyrophosphate,cc,Whey acid,
+Whey acid,cc,UMP,
+UMP,cc,UDP,
+UDP,cc,UTP,
+UTP,cr,CTPS1,CTP Synthase 1
+CTPS1,pp,CTPS2,CTP Synthase 2
+CTPS1,rc,CTP,
+Man-6-P,cr,PMM1,Phosphomannomutase 1
+PMM1,pp,PMM2,Phosphomannomutase 2
+PMM1,rc,Man-1-P,
+Mannose,cr,HK1,Hexokinase 1
+HK1,rc,Man-6-P,
+HK1,pp,HK2,Hexokinase 2
+HK2,pp,HK3,Hexokinase 3
+Glc-1-P,cr,UGP2,UDP-Glucose Pyrophosphorylase 2
+UTP,cr,UGP2,
+UGP2,rc,UDP-Glc,
+UDP-Glc,cr,GALT,Galactose-1-phosphate uridyl transferase
+Gal-1-P,cr,GALT,
+UTP,cr,GALT,
+GALT,rc,UDP-Gal,
+GALT,rc,Glc-1-P,
+UDP-Glc,cr,GALE,UDP-galactose-4-epimerase
+GALE,rc,UDP-Gal,
+UDP-Gal,cr,UGDH,UDP-Glucose 6-Dehydrogenase
+UGDH,rc,UDP-GlcA,
+UDP-GlcA,cr,UXS1,UDP-Glucuronate Decarboxylase 1
+UXS1,rc,UDP-Xyl,
+Galactose,cr,GALK1,Galactokinase 
+GALK1,rc,Gal-1-P,
+Gal-1-P,cr,GALT,
+GALT,rc,Glc-1-P,
+UDP-Glc,cr,ALG5,Dolichyl-Phosphate Beta-Glucosyltransferase
+ALG5,rc,Dol-P-Glc,
+Dol-P-Glc,cr,ALG5,
+ALG5,pp,ALG6,"Alpha-1,3-Glucosyltransferase"
+ALG6,pp,ALG8,"Alpha-1,3-Glucosyltransferase"
+ALG8,pp,ALG10,"Alpha-1,2-Glucosyltransferase"
+ALG10,pp,ALG10B,"Alpha-1,2-Glucosyltransferase"
+ALG5,rp,Donor substrate for Glycosylation 1,
+UDP-Glc,cr,UGGT1,UDP-Glucose Glycoprotein Glucosyltransferase 1
+UGGT1,pp,UGGT2,UDP-Glucose Glycoprotein Glucosyltransferase 2
+UGGT2,pp,UGCG,UDP-Glucose Ceramide Glucosyltransferase
+UGCG,pp,B3GLCT,Beta 3-Glucosyltransferase
+B3GLCT,pp,GYG1,Glycogenin 1
+UGGT1,rp,Donor substrate for Glycosylation 1,
+UDP-Gal,cr,B4GALT1,"Beta-1,4-Galactosyltransferase 1"
+B4GALT1,pp,B4GALT2,"Beta-1,4-Galactosyltransferase 2"
+B4GALT2,pp,B4GALT3,"Beta-1,4-Galactosyltransferase 3"
+B4GALT3,pp,B4GALT4,"Beta-1,4-Galactosyltransferase 4"
+B4GALT4,pp,B4GALT5,"Beta-1,4-Galactosyltransferase 5"
+B4GALT5,pp,B4GALT6,"Beta-1,4-Galactosyltransferase 6"
+B4GALT6,pp,B4GALT7,"Beta-1,4-Galactosyltransferase 7"
+B4GALT7,pp,B3GALT1,"Beta-1,3-Galactosyltransferase 1"
+B3GALT1,pp,B3GALT2,"Beta-1,3-Galactosyltransferase 2"
+B3GALT2,pp,B3GALT4,"Beta-1,3-Galactosyltransferase 4"
+B3GALT4,pp,B3GALT5,"Beta-1,3-Galactosyltransferase 5"
+B3GALT5,pp,B3GALT6,"Beta-1,3-Galactosyltransferase 6"
+B3GALT6,pp,B3GNT8,"Beta-1,3-Galactosyltransferase 7"
+B3GNT8,pp,C1GALT1,"Core 1 Synthase, Glycoprotein-N-Acetylgalactosamine 3-Beta-Galactosyltransferase 1"
+C1GALT1,pp,COLGALT1,Collagen Beta(1-O)Galactosyltransferase 1
+COLGALT1,pp,COLGALT2,Collagen Beta(1-O)Galactosyltransferase 2
+COLGALT2,pp,A4GALT,"Alpha 1,4-Galactosyltransferase (P Blood Group)"
+A4GALT,pp,A3GALT2,"Alpha 1,3-Galactosyltransferase 2"
+B4GALT1,rp,Donor substrate for Glycosylation 1,
+UDP-Xyl,cr,POGLUT1,Protein O-Glucosyltransferase 1
+POGLUT1,pp,XYLT1,Xylosyltransferase 1
+XYLT1,pp,XYLT2, Xylosyltransferase 2
+XYLT2,pp,XXYLT1,Xyloside Xylosyltransferase 1
+XXYLT1,pp,GXYLT1,Glucoside Xylosyltransferase 1
+GXYLT1,pp,GXYLT2,Glucoside Xylosyltransferase 2
+GXYLT2,pp,LARGE1,LARGE Xylosyl- And Glucuronyltransferase 1
+LARGE1,pp,LARGE2,LARGE Xylosyl- And Glucuronyltransferase 2
+POGLUT1,rp,Donor substrate for Glycosylation 2,
+UDP-GlcA,cr,B3GAT1,
+B3GAT1,pp,B3GAT2,
+B3GAT2,pp,B3GAT3,
+B3GAT3,pp,B4GAT1,
+B4GAT1,pp,B4GAT2,
+B4GAT2,pp,HAS1,
+HAS1,pp,HAS2,
+HAS2,pp,HAS3,
+HAS3,pp,LARGE1,
+LARGE1,pp,LARGE2,
+LARGE2,pp,UGT1A1,
+UGT1A1,pp,UGT1A3,
+UGT1A3,pp,UGT1A4,
+UGT1A4,pp,UGT1A5,
+UGT1A5,pp,UGT1A6,
+UGT1A6,pp,UGT1A7,
+UGT1A7,pp,UGT1A8,
+UGT1A8,pp,UGT1A9,
+UGT1A9,pp,UGT1A10,
+UGT1A10,pp,UGT2A2,
+UGT2A2,pp,UGT3A1,
+UGT3A1,pp,UGT3A2,
+UGT3A2,pp,UGT2B4,
+UGT2B4,pp,UGT2B7,
+UGT2B7,pp,UGT2B10,
+UGT2B10,pp,UGT2B11,
+UGT2B11,pp,UGT2B15,
+UGT2B15,pp,UGT2B17,
+UGT2B17,pp,UGT2B28,
+B3GAT1,rp,Donor substrate for Glycosylation 2,
+Man-1-P,cr,GMPPB,GDP-Mannose Pyrophosphorylase B
+GMPPB,pp,GMPPA,GDP-Mannose Pyrophosphorylase A
+GMPPB,rc,GDP-Man,
+GDP-Man,cr,GMDS,"GDP-Mannose 4,6-Dehydratase"
+GMDS,rc,GDP-4-keto-6-deoxymannose,
+GDP-4-keto-6-deoxymannose,cr,TSTA3,Tissue Specific Transplantation Antigen P35B
+TSTA3,rc,GDP-Fuc,
+GDP-Fuc,cr,FPGT,Fucose-1-Phosphate Guanylyltransferase
+FPGT,rc,Fuc-1-P,
+Fuc,cr,FUK,Fucokinase
+FUK,rc,Fuc-1-P,
+GlcN-6-P,cr,GNPNAT1,Glucosamine-Phosphate N-Acetyltransferase 1
+AcetylCoA,cr,GNPNAT1,
+GNPNAT1,rc,GlcNAc-6-P,
+GlcNAc-6-P,cr,PGM3,Phosphoglucomutase 3
+PGM3,rc,GlcNAc-1-P,
+GlcNAc-1-P,cr,UAP1,UDP-N-Acetylglucosamine Pyrophosphorylase 1
+UAP1,pp,UAP1L1,
+UAP1,rc,UDP-GlcNAc,
+UDP-GlcNAc,cr,GNE,Glucosamine (UDP-N-Acetyl)-2-Epimerase/N-Acetylmannosamine Kinase
+GNE,rc,ManNAc,
+ManNAc,cr,GNE,
+GNE,rc,ManNAc-6-P,
+ManNAc-6-P,cr,NANS,N-Acetylneuraminate Synthase
+NANS,rc,Neu5Ac-9-P,
+Neu5Ac-9-P,cr,NANP,N-Acetylneuraminic Acid Phosphatase
+NANP,rc,Neu5Ac,
+Neu5Ac,cr,CMAS,Cytidine Monophosphate N-Acetylneuraminic Acid Synthetase
+CTP,cr,CMAS,
+CMAS,rc,CMP-Neu5Ac,
+CMP-Neu5Ac,cr,NPL,N-Acetylneuraminate Pyruvate Lyase
+NPL,rc,ManNAc,
+GlcNAc,cr,NAGK,N-Acetylglucosamine Kinase
+NAGK,rc,GlcNAc-6-P,
+GlcNAc,cr,RENBP,Renin Binding Protein
+RENBP,rc,ManNAc,
+CMP-Neu5Ac,cr,ST3GAL1,"ST3 Beta-Galactoside Alpha-2,3-Sialyltransferase 1"
+ST3GAL1,pp,ST3GAL2,"ST3 Beta-Galactoside Alpha-2,3-Sialyltransferase 2"
+ST3GAL2,pp,ST3GAL3,"ST3 Beta-Galactoside Alpha-2,3-Sialyltransferase 3"
+ST3GAL3,pp,ST3GAL4,"ST3 Beta-Galactoside Alpha-2,3-Sialyltransferase 4"
+ST3GAL4,pp,ST3GAL5,"ST3 Beta-Galactoside Alpha-2,3-Sialyltransferase 5"
+ST3GAL5,pp,ST3GAL6,"ST3 Beta-Galactoside Alpha-2,3-Sialyltransferase 6"
+ST3GAL6,pp,ST6GAL1,"ST6 Beta-Galactoside Alpha-2,6-Sialyltransferase 1"
+ST6GAL1,pp,ST6GAL2,"ST6 Beta-Galactoside Alpha-2,6-Sialyltransferase 2"
+ST6GAL2,pp,ST6GALNAC1,"ST6 N-Acetylgalactosaminide Alpha-2,6-Sialyltransferase 1"
+ST6GALNAC1,pp,ST6GALNAC2,"ST6 N-Acetylgalactosaminide Alpha-2,6-Sialyltransferase 2"
+ST6GALNAC2,pp,ST6GALNAC3,"ST6 N-Acetylgalactosaminide Alpha-2,6-Sialyltransferase 3"
+ST6GALNAC3,pp,ST6GALNAC4,"ST6 N-Acetylgalactosaminide Alpha-2,6-Sialyltransferase 4"
+ST6GALNAC4,pp,ST6GALNAC5,"ST6 N-Acetylgalactosaminide Alpha-2,6-Sialyltransferase 5"
+ST6GALNAC5,pp,ST6GALNAC6,"ST6 N-Acetylgalactosaminide Alpha-2,6-Sialyltransferase 6"
+ST6GALNAC6,pp,ST8SIA1,"ST8 Alpha-N-Acetyl-Neuraminide Alpha-2,8-Sialyltransferase 1"
+ST8SIA1,pp,ST8SIA2,"ST8 Alpha-N-Acetyl-Neuraminide Alpha-2,8-Sialyltransferase 2"
+ST8SIA2,pp,ST8SIA3,"ST8 Alpha-N-Acetyl-Neuraminide Alpha-2,8-Sialyltransferase 3"
+ST8SIA3,pp,ST8SIA4,"ST8 Alpha-N-Acetyl-Neuraminide Alpha-2,8-Sialyltransferase 4"
+ST8SIA4,pp,ST8SIA5,"ST8 Alpha-N-Acetyl-Neuraminide Alpha-2,8-Sialyltransferase 5"
+ST8SIA5,pp,ST8SIA6,"ST8 Alpha-N-Acetyl-Neuraminide Alpha-2,8-Sialyltransferase 6"
+ST3GAL1,rp,Donor substrate for Glyclsylation 3,
+UDP-GlcNAc,cr,DPAGT1,
+DPAGT1,pp,ALG13,
+ALG13,pp,ALG14,
+ALG14,pp,MGAT1,
+MGAT1,pp,MGAT2,
+MGAT2,pp,MGAT3,
+MGAT3,pp,MGAT4,
+MGAT4,pp,MGAT5,
+MGAT5,pp,B3GNT2,
+B3GNT2,pp,B3GNT3,
+B3GNT3,pp,B3GNT4,
+B3GNT4,pp,B3GNT5,
+B3GNT5,pp,B3GNT6,
+B3GNT6,pp,B3GNT7,
+B3GNT7,pp,B3GNT8,
+B3GNT8,pp,B3GNT9,
+B3GNT9,pp,CGNT1,
+CGNT1,pp,CGNT2,
+CGNT2,pp,CGNT3,
+CGNT3,pp,CGNT4,
+CGNT4,pp,CGNT6,
+CGNT6,pp,A4GNT,
+A4GNT,pp,NAGPA,
+NAGPA,pp,OGT,
+OGT,pp,POMGNT1,
+POMGNT1,pp,POMGNT2,
+POMGNT2,pp,RFNG,
+RFNG,pp,LFNG,
+DPAGT1,rp,Donor substrate for Glycosylation 6,
+Man-6-P,cr,NANS,N-Acetylneuraminate-9-Phosphate Synthase
+NANS,rc,Kdn-9-P,
+Kdn-9-P,cc,Kdn,
+Kdn,cr,CMP-Kdn Synthase,
+CTP,cr,CMP-Kdn Synthase,
+CMP-Kdn Synthase,rc,CMP-Kdn,
+GDP-Fuc,cr,FUT1,
+FUT1,pp,FUT2,
+FUT2,pp,FUT3,
+FUT3,pp,FUT4,
+FUT4,pp,FUT5,
+FUT5,pp,FUT6,
+FUT6,pp,FUT7,
+FUT7,pp,FUT8,
+FUT8,pp,FUT9,
+FUT9,pp,FUT10,
+FUT10,pp,FUT11,
+FUT11,pp,POFUT1,
+POFUT1,pp,POFUT2,
+FUT1,rp,Donor substrate for Glycosylation 5,
+GDP-Man,cr,DPM1,"Dolichyl-Phosphate Mannosyltransferase Subunit 1, Catalytic"
+DPM1,pp,DPM2,"Dolichyl-Phosphate Mannosyltransferase Subunit 2, Regulatory"
+DPM2,pp,DPM3,Dolichyl-Phosphate Mannosyltransferase Subunit 3
+DPM1,rc,Dol-P-Man,
+GDP-Man,cr,ALG1,
+ALG1,pp,ALG2,
+ALG2,pp,ALG11,
+ALG1,rp,Donor substrate for Glycosylation 4,
+Dol-P-Man,cr,POMT1,
+POMT1,pp,POMT2,
+POMT2,pp,POMT3,
+POMT3,pp,ALG3,
+ALG3,pp,ALG9,
+ALG9,pp,ALG12,
+ALG12,pp,PIGV,
+PIGV,pp,PIGZ,
+PIGZ,pp,PIGM,
+PIGM,pp,PIGB,
+PIGB,pp,PIGX,
+POMT1,rp,Donor substrate for Glycosylation 4,
+GlcN,cr,HK1,
+HK1,pp,HK2,
+HK2,pp,HK3,
+HK3,pp,HKDC1,
+HK1,rc,GlcN-6-P,
+AcetylCoA,cr,CS,Citrate synthase
+CS,rc,Citric Acid,
+Oxaloacetate,cr,ACLY,ATP Citrate Lyase
+ACLY,rc,Citric Acid,
+Citric Acid,cr,ACO2,Aconitase 2
+ACO2,pp,ACO1,
+ACO2,rc,Isocitrate,
+Isocitrate,cr,IDH1,"Isocitrate Dehydrogenase (NADP(+)) 1, Cytosolic"
+IDH1,pp,IDH2,"Isocitrate Dehydrogenase (NADP(+)) 2, Mitochondrial"
+IDH1,rc,Alpha-KG,
+Alpha-KG,cr,OGDH,Oxoglutarate Dehydrogenase
+OGDH,pp,DLAT,Dihydrolipoamide S-Acetyltransferase
+OGDH,rc,Succinyl-CoA,
+Succinyl-CoA,cr,SUCLG2,Succinate-CoA Ligase GDP-Forming Beta Subunit
+SUCLG2,pp,SUCLG1,Succinate-CoA Ligase Alpha Subunit
+SUCLG1,pp,SUCLA2,Succinate-CoA Ligase ADP-Forming Beta Subunit
+SUCLG2,rc,Succinate,
+Succinate,cr,SDHA,Succinate Dehydrogenase Complex
+SDHA,pp,SDHB,
+SDHB,pp,SDHC,
+SDHC,pp,SDHD,
+SDHA,rc,Fumarate,
+Valine,cc,Propionyl-CoA,
+Methionine,cc,Propionyl-CoA,
+Isoleucine,cc,Propionyl-CoA,
+Propionyl-CoA,cr,PCCA,Propionyl-CoA Carboxylase Alpha Subunit
+PCCA,pp,PCCB,Propionyl-CoA Carboxylase Beta Subunit
+PCCA,rc, (S)-methylmalonyl-CoA,
+(S)-methylmalonyl-CoA,cr,MUT,Methylmalonyl-CoA Mutase
+MUT,rc,Succinyl-CoA,
+Glutamate,cr,GLUD1,Glutamate Dehydrogenase 1
+GLUD1,rc,Alpha-KG,
+Glutamine,cr,GLS,Glutaminase
+GLS,pp,GLS2,Glutaminase 2
+GLS,rc,Glutamate,
+Histidine,cr,HAL,Histidine Ammonia-Lyase
+HAL,rc,Urocanic acid,
+Urocanic acid,cr,UROC1,Urocanate Hydratase 1
+UROC1,rc,4-Imidazolone-5-propionic acid,
+4-Imidazolone-5-propionic acid,cr,AMDHD1,Amidohydrolase Domain Containing 1
+AMDHD1,rc,N-Formimino-L-glutamate,
+Glutamate,cr,FTCD,formimidoyltransferase cyclodeaminase
+FTCD,rc,N-Formimino-L-glutamate,
+Arginine,cr,ARG1,Arginase 1
+ARG1,pp,ARG2,
+ARG1,rc,Ornithine,
+Ornithine,cr,OAT,Ornithine Aminotransferase
+OAT,rc,Glutamate-semialdehyde,
+Glutamate-semialdehyde,cr,ALDH18A1,Aldehyde Dehydrogenase 18 Family Member A1
+ALDH18A1,rc,Glutamate,
+Proline,cr,PYCR2,Pyrroline-5-Carboxylate Reductase 2
+PYCR2,pp,PYCR1,
+PYCR1,pp,PYCR3,
+PYCR2,rc,Pyrroline-5-carboxylate,
+Pyrroline-5-carboxylate,cr,ALDH4A1,
+ALDH4A1,rc,Glutamate,
+Asparagine,cr,ASNS,Asparagine Synthetase
+ASNS,rc,Aspartate,
+Oxaloacetate,cr,GOT1,Glutamic-Oxaloacetic Transaminase 1
+GOT1,pp,GOT2,
+GOT1,rc,Aspartate,
+"Fructose-1,6-diphosphate",cr,ALDOA,"Aldolase, Fructose-Bisphosphate A"
+ALDOA,pp,ALDOB,
+ALDOB,pp,ALDOC,
+ALDOA,rc,Glyceraldehyde-3P,
+Glyceraldehyde-3P,cr,GAPDH,Glyceraldehyde-3-Phosphate Dehydrogenase
+GAPDH,pp,GAPDHS,
+GAPDH,rc,Glycerate-13P2,
+Glycerate-13P2,cr,PGK1,Phosphoglycerate Kinase 1
+PGK1,pp,PGK2,
+PGK1,rc,Glycerate-3P,
+Glycerate-3P,cr,PGAM4,Phosphoglycerate Mutase
+PGAM4,pp,PGAM1,
+PGAM1,pp,PGAM2,
+PGAM2,pp,BPGM,
+PGAM4,rc,Glycerate-2P,
+Glycerate-2P,cr,ENO1,Enolase 1
+ENO1,pp,ENO2,
+ENO2,pp,ENO3,
+ENO3,pp,ENO4,
+ENO1,rc,Phosphoenolpyruvate,
+Phosphoenolpyruvate,cr,PKLR,"Pyruvate Kinase, Liver And RBC"
+PKLR,pp,PKM,"Pyruvate Kinase, Muscle"
+PKLR,rc,Pyruvate,
+Pyruvate,cr,PDHA1,Pyruvate Dehydrogenase E1 
+PDHA1,pp,PDHA2,
+PDHA2,pp,PDHB,
+PDHB,pp,DLAT,
+PDHA1,rc,AcetylCoA,
+Glycine,cr,SHMT1,
+SHMT1,pp,SHMT2,
+SHMT1,rc,Serine,
+Serine,cr,SDS,
+SDS,pp,SDSL,
+SDS,rc,Pyruvate,
+Cysteine,cr,CTH,
+CTH,rc,Pyruvate,
+Alanine,cr,AGXT,
+AGXT,pp,AGXT2,
+AGXT,rc,Pyruvate,
+Phenylalanine,cr,PAH,
+PAH,rc,Tyrosine,
+Tyrosine,cr,TAT,
+TAT,rc,4-hydroxyphenylpyruvate,
+4-hydroxyphenylpyruvate,cr,HPD,
+HPD,rc,Homogentisate,
+Homogentisate,cr,HGD,
+HGD,rc,4-Maleylacetoacetate,
+4-Maleylacetoacetate,cr,GSTZ1,
+GSTZ1,rc,4-Fumarylacetoacetate,
+4-Fumarylacetoacetate,cr,FAH,
+FAH,rc,Acetoacetate,
+FAH,rc,Fumarate,
+Acetoacetate,cr,AACS,Acetoacetyl-CoA Synthetase
+AACS,rc,Acetoacetyl-CoA,
+AcetylCoA,cr,ACACA,
+ACACA,rc,Acetoacetyl-CoA,
+Leucine,cr,BCAT1,
+BCAT1,pp,BCAT2,
+BCAT1,rc,4-Methyl-2-oxopentanoate,
+4-Methyl-2-oxopentanoate,cr,BCKDHA,
+BCKDHA,pp,BCKDHB,
+BCKDHA,rc,S-3-Methyl-butanoyl-dihydrolipoamide-E,
+S-3-Methyl-butanoyl-dihydrolipoamide-E,cr,DBT,
+DBT,rc,3-Methylbutanoyl-CoA,
+3-Methylbutanoyl-CoA,cr,IVD,
+IVD,rc,3-Methylbut-2-enoyl-CoA,
+3-Methylbut-2-enoyl-CoA,cr,MCCC1,
+MCCC1,pp,MCCC2,
+MCCC1,rc,3-Methyl-glutaconyl-CoA,
+3-Methyl-glutaconyl-CoA,cr,AUH,
+AUH,rc,3-Hydroxy-3-methylglutaryl-CoA,
+3-Hydroxy-3-methylglutaryl-CoA,cr,HMGCL,
+HMGCL,pp,HMGCLL1,
+HMGCL,rc,Acetoacetate,
+HMGCL,rc,AcetylCoA,
