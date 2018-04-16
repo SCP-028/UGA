@@ -2,8 +2,7 @@
 # calculated (knowing the # and molecular weight of AAs). Assuming everything
 # else is water, we then know the number of H2O molecules.
 # According to http://book.bionumbers.org/what-is-the-macromolecular-composition-of-the-cell/,
-# and 55% percent of the cell dry mass are proteins, water makes up 70% of the total cell weight,
-# which means 16.5% of the total weight of cells are proteins.
+# there're in total 3e6 * 3e4 = 9e10 Da proteins, ~
 rm(list=ls())
 
 setwd("C:/Users/yz73026/Desktop/protein_pka/KAUST/result")
@@ -21,7 +20,7 @@ acidic <- c("ASP", "GLU")
 basic <- c("ARG", "LYS", "HIS")
 
 eq_acid <- function(pKa) {
-  return((10 ^ -pKa))
+  return(sqrt(10 ^ -pKa))
 }
 
 eq_base <- function(pKb) {
