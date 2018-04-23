@@ -7,7 +7,7 @@ retrieve.ensemblAnnot <- function(df, codingOnly=F) {
     #' @param codingOnly Keep only the protein-coding genes and ditch the rest.
     #'
     #' @return A data.frame of matching ensembl IDs and symbols.
-    library(biomaRt)
+    require(biomaRt)
 
     if ("ensembl" %in% colnames(df)) {
         rownames(df) <- as.character(df$ensembl)
@@ -46,7 +46,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     #' @param libSize Keep library size for DEG test or not.
     #'
     #' @return A data.frame df with its rownames converted.
-    library(dplyr)
+    require(dplyr)
     # Check rownames of df
     if ("ensembl" %in% colnames(df)) {
         rownames(df) <- as.character(df$ensembl)
@@ -92,35 +92,36 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
 }
 
 
-transform.data <- function(df, annot, project) {
-    #' Separate different stages, and melt for ggplot.
-    #'
-    #' Require reshape2 to work (uses melt function).
-    #'
-    #' @param df The data frame whose rownames are to be converted.
-    #' @param annot Stage information.
-    #' @param project The TCGA project name.
-    #'
-    #' @return A melted data.frame with different stages.
-    library(reshape2)
-    df <- df[rowMeans(df) >= 1, ]
-    df$symbol <- rownames(df)
-    df <- melt(df, id.vars = "symbol")
-    df$stage <- 0
-    stage1 <- annot$barcode[grepl("(^i$)|(\\si[abc]?$)|(1)", annot$tumor_stage) &
-                                annot$project == project]
-    stage2 <- annot$barcode[grepl("(^ii$)|(\\si{2}[abc]?$)|(2)", annot$tumor_stage) &
-                                annot$project == project]
-    stage3 <- annot$barcode[grepl("(^iii$)|(\\si{3}[abc]?$)|(3)", annot$tumor_stage) &
-                                annot$project == project]
-    stage4 <- annot$barcode[grepl("(^iv$)|(\\siv[abc]?$)|(4)", annot$tumor_stage) &
-                                annot$project == project]
-    df$stage[df$variable %in% stage1] <- "i"
-    df$stage[df$variable %in% stage2] <- "ii"
-    df$stage[df$variable %in% stage3] <- "iii"
-    df$stage[df$variable %in% stage4] <- "iv"
-    df <- df[df$stage != 0, ]
-    return(df)
+transform.data <- function(df, stageAnnot, project) {
+  #' Separate different stages, and melt for ggplot.
+  #'
+  #' Require tidyr to work (uses the gather function).
+  #'
+  #' @param df The data frame whose rownames are to be converted.
+  #' @param stageAnnot Stage information.
+  #' @param project The TCGA project name.
+  #'
+  #' @return A melted data.frame with different stages.
+
+  require(tidyr)
+  # df <- df[rowMeans(df) >= 1, ]
+  df$variable <- rownames(df)
+  df <- df %>% gather(key="variable")
+  df$stage <- 0
+  stage1 <- stageAnnot$barcode[grepl("(^i$)|(\\si[abc]?$)|(1)", stageAnnot$tumor_stage) &
+                                 stageAnnot$project == project]
+  stage2 <- stageAnnot$barcode[grepl("(^ii$)|(\\si{2}[abc]?$)|(2)", stageAnnot$tumor_stage) &
+                                 stageAnnot$project == project]
+  stage3 <- stageAnnot$barcode[grepl("(^iii$)|(\\si{3}[abc]?$)|(3)", stageAnnot$tumor_stage) &
+                                 stageAnnot$project == project]
+  stage4 <- stageAnnot$barcode[grepl("(^iv$)|(\\siv[abc]?$)|(4)", stageAnnot$tumor_stage) &
+                                 stageAnnot$project == project]
+  df$stage[df$variable %in% stage1] <- "i"
+  df$stage[df$variable %in% stage2] <- "ii"
+  df$stage[df$variable %in% stage3] <- "iii"
+  df$stage[df$variable %in% stage4] <- "iv"
+  df <- df[df$stage != 0, ]
+  return(df)
 }
 
 
@@ -137,9 +138,9 @@ exp.boxplot <- function(datan, datat, proj, annot) {
     #'
     #' @return Genes used in the boxplot.
 
-    library(dplyr)
-    library(ggplot2)
-    library(ggpubr)
+    require(dplyr)
+    require(ggplot2)
+    require(ggpubr)
 
     datan <- transform.data(datan, annot, proj)
     datat <- transform.data(datat, annot, proj)
@@ -193,7 +194,7 @@ prep.cor.heatmap <- function(df, genelist, cluster=F,
     #' @param sample Normal or tumor samples, used for later plotting.
     #'
     #' @return A melted data.frame of the correlation coefficients.
-    library(reshape2)
+    require(reshape2)
     df <- df[match(genelist, rownames(df)), ]
     df <- df[apply(df, 1, var) != 0, ]
     df <- cor(t(df), method="spearman")
@@ -217,7 +218,7 @@ nice.heatmap <- function(df, title) {
     #' @param title The title of the plot.
     #'
     #' @return A ggplot list.
-    library(ggplot2)
+    require(ggplot2)
     ggplt <- ggplot(df, aes(Var1, Var2, fill=value))+
              geom_tile(color="white")+
              ggtitle(title)+
@@ -256,7 +257,7 @@ multiplot <- function(..., plotlist=NULL, cols=1, layout=NULL) {
     #'
     #' @examples
     #' multiplot(plot1, plot2, cols=2)
-    library(grid)
+    require(grid)
     # Make a list from the ... arguments and plotlist
     plots <- c(list(...), plotlist)
     numPlots = length(plots)
@@ -298,7 +299,7 @@ edgeR.de.test <- function(df1, df2, group1, group2, sepLibSize=F) {
   #' @param group2 Name of second group.
   #' @param sepLibSize If `name.convert` has a separate library size,
   #'                   set this to TRUE.
-  library(edgeR)
+  require(edgeR)
   if(sepLibSize) {
     libSize <- c(df1$libSize, df2$libSize)
     df1 <- df1$exp[order(rownames(df1$exp)), ]
