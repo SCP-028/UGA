@@ -1,6 +1,7 @@
 import os
 import sys
 
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -13,7 +14,6 @@ TEST_METHOD: bool = False
 TEST_FOUR_DAYS: bool = False  # cannot be True if TEST_METHOD is True
 
 INTERPOLATE_DATA: bool = True  # cannot be True if TEST_METHOD is True
-FEVER_CUTOFF: float = 39
 TIME_WINDOW: int = 4
 USE_FOURIER_TRANSFORM: bool = False
 FOURIER_COEF_NUM: int = 15
@@ -155,6 +155,7 @@ def fourier_series(dfs, t: int=2, n: int=10, detrend: bool=True) -> pd.DataFrame
             c.append(integrator(p, x) / integrator(q, x))
             S += c[i - 1] * np.cos(i * np.pi * x / L)  # S should be an array w/ the same len as x
         return dict(S=S, c=c)
+
     S_matrices = pd.DataFrame()
     M_matrix = pd.DataFrame(columns=[f"c{i+1}" for i in range(n)])
     for df, uuid in zip(dfs, ids):
@@ -286,112 +287,54 @@ if TEST_FOUR_DAYS:
 # Interpolate temperature data and find when the fevers happened:
 if INTERPOLATE_DATA:
     df = interpolate_data(df)
-# df["condition"] = np.where(df.temperature >= FEVER_CUTOFF, "fever", "normal")
-
 
 # Calculate the trend using the Hodrick-Prescott filter:
 trend_list = []
 for uuid in ids:
     x = df[df["id"] == uuid][["timepoint", "temperature"]]
     trend_list.append(hodrick_prescott(x, lamb=HODRICK_PRESCOTT_LAMBDA))
-
 figs = [tsplot(x, uuid, trend=True, detrended=False, save_image=False) for x, uuid in zip(trend_list, ids) if uuid in ["E30_RKy15", "E06_RIh16", "E07B_11C166"]]
 
-
-# Original data without applying the Hodrick-Prescott Filter:
+# Check the de-trended data:
 if USE_FOURIER_TRANSFORM:
-    M_matrix_original = fourier_transform(trend_list, t=TIME_WINDOW, n=FOURIER_COEF_NUM, detrend=False)
+    M_matrix = fourier_transform(trend_list, t=TIME_WINDOW, n=FOURIER_COEF_NUM, detrend=True)
 else:
-    S_matrix_original, M_matrix_original = fourier_series(trend_list, t=TIME_WINDOW, n=FOURIER_COEF_NUM, detrend=False)
-S_matrix_original.head()
-M_matrix_original.head()
-
-dfm = S_matrix_original.loc[S_matrix_original["id"].str.startswith("E30_RKy15")]
-dfm = dfm.groupby("timepoint").mean().reset_index()
-fig = {
-    'data': [
-        go.Scatter(
-            x=pd.to_datetime(dfm['timepoint']),
-            y=dfm['temperature'],
-            name="Temperature",
-            opacity=0.7
-        ),
-        go.Scatter(
-            x=pd.to_datetime(dfm["timepoint"]),
-            y=dfm["fcs"],
-            name="Fourier cosine series",
-            opacity=0.7
-        )
-    ],
-    'layout': {
-        'xaxis': {'title': 'Date'},
-        'yaxis': {'title': "Temperature"},
-        "title": "E30 RKy15"
+    S_matrix, M_matrix = fourier_series(trend_list, t=TIME_WINDOW, n=FOURIER_COEF_NUM, detrend=True)
+    dfm = S_matrix.loc[S_matrix["id"].str.startswith("E30_RKy15")]
+    dfm = dfm.groupby("timepoint").mean().reset_index()
+    fig = {
+        'data': [
+            go.Scatter(
+                x=pd.to_datetime(dfm['timepoint']),
+                y=dfm['detrended'],
+                name="Temperature",
+                opacity=0.7
+            ),
+            go.Scatter(
+                x=pd.to_datetime(dfm["timepoint"]),
+                y=dfm["fcs"],
+                name="Fourier cosine series",
+                opacity=0.7
+            )
+        ],
+        'layout': {
+            'xaxis': {'title': 'Date'},
+            'yaxis': {'title': "Temperature"},
+            'title': "E30 RKy15"
+        }
     }
-}
-offline.iplot(fig, show_link=False, image="png")
+    offline.iplot(fig, show_link=False, image="png")
+M_matrix.head()
 
 pca = PCA(n_components=2, random_state=0)
-c = pca.fit(M_matrix_original.T)
+c = pca.fit(M_matrix.T)
 x, y = c.components_
-print(c.explained_variance_ratio_)
-projection = pca.inverse_transform(pca.transform(M_matrix_original.T))
-loss = ((M_matrix_original.T - projection) ** 2).mean()
+print(f"Explained variance ratio: {c.explained_variance_ratio_}")
+projection = pca.inverse_transform(pca.transform(M_matrix.T))
+loss = ((M_matrix.T - projection) ** 2).mean()
 loss.head()
 
-obs = M_matrix_original.index.tolist()
-df["newID"] = df["id"] + [f"_{str(x.date())[-5:]}_{str((x + pd.DateOffset(TIME_WINDOW - 1)).date())[-5:]}" for x in df["timepoint"]]
-data = pd.DataFrame(dict(PC1=x, PC2=y), index=obs)
-data["group"] = [x.split("_")[0] for x in data.index]
-fig = sns.lmplot(
-    data=data, x="PC1", y="PC2", hue="group", size=10,
-    fit_reg=False, scatter_kws={'alpha': 0.7}, markers=["o", "x", "s"]
-)
-
-
-# Now check the de-trended data:
-if USE_FOURIER_TRANSFORM:
-    M_matrix_detrend = fourier_transform(trend_list, t=TIME_WINDOW, n=FOURIER_COEF_NUM, detrend=True)
-else:
-    S_matrix_detrend, M_matrix_detrend = fourier_series(trend_list, t=TIME_WINDOW, n=FOURIER_COEF_NUM, detrend=True)
-S_matrix_detrend.head()
-M_matrix_detrend.head()
-
-dfm = S_matrix_detrend.loc[S_matrix_detrend["id"].str.startswith("E30_RKy15")]
-dfm = dfm.groupby("timepoint").mean().reset_index()
-fig = {
-    'data': [
-        go.Scatter(
-            x=pd.to_datetime(dfm['timepoint']),
-            y=dfm['detrended'],
-            name="Temperature",
-            opacity=0.7
-        ),
-        go.Scatter(
-            x=pd.to_datetime(dfm["timepoint"]),
-            y=dfm["fcs"],
-            name="Fourier cosine series",
-            opacity=0.7
-        )
-    ],
-    'layout': {
-        'xaxis': {'title': 'Date'},
-        'yaxis': {'title': "Temperature"},
-        'title': "E30 RKy15"
-    }
-}
-offline.iplot(fig, show_link=False, figure="png")
-
-pca = PCA(n_components=2, random_state=0)
-c = pca.fit(M_matrix_detrend.T)
-x, y = c.components_
-print(c.explained_variance_ratio_)
-projection = pca.inverse_transform(pca.transform(M_matrix_detrend.T))
-loss = ((M_matrix_detrend.T - projection) ** 2).mean()
-loss.head()
-
-obs = M_matrix_detrend.index.tolist()
-df["newID"] = df["id"] + [f"_{str(x.date())[-5:]}_{str((x + pd.DateOffset(TIME_WINDOW - 1)).date())[-5:]}" for x in df["timepoint"]]
+obs = M_matrix.index.tolist()
 data = pd.DataFrame(dict(PC1=x, PC2=y), index=obs)
 data["group"] = [x.split("_")[0] for x in data.index]
 fig = sns.lmplot(
