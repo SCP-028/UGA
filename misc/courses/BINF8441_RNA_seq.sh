@@ -74,7 +74,7 @@ fastq-dump --split-3 "$HOME/ncbi/public/sra/SRX2884433.sra"  # control iron 1
 
 # pre-alignment quality control reports
 mkdir qc
-fastqc SRX2884433_1.fastq SRX2884433_2.fastq -o "./qc" -t 4
+fastqc SRX2884433_1.fastq SRX2884433_2.fastq -o "./qc" -t 2
 # Check quality control reports before moving forward! #
 
 ################################################################################
