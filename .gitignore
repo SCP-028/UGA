@@ -149,3 +149,4 @@ rsconnect/
 *.bed
 *.tgz
 .vscode/
+.Rproj.user

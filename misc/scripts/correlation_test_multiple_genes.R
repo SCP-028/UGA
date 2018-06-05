@@ -1,4 +1,4 @@
-library(ggpubr)
+library(ggplot2)
 
 setwd("C:/Users/yz73026/Desktop/")
 
@@ -12,7 +12,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     #' Convert ensembl to gene symbol.
     #'
     #' Require dplyr to work (uses inner_join function).
-    #'  
+    #'
     #' @param df The data frame whose rownames are to be converted.
     #' @param ensemblAnnot Annotation data.frame from `retrieve.ensembAnnot`.
     #' @param codingOnly Keep only the protein-coding genes and ditch the rest.
@@ -102,7 +102,7 @@ nice.heatmap <- function(df, title) {
 
 prep.cor.heatmap <- function(df, genelist, cluster=F,
                              sample=c("normal", "tumor")) {
-  #' Calculate spearman correlation coefficients and cluster. 
+  #' Calculate spearman correlation coefficients and cluster.
   #'
   #' @param df The input values.
   #' @param genelist Used for arranging the order of the genes.
@@ -117,7 +117,7 @@ prep.cor.heatmap <- function(df, genelist, cluster=F,
   if (cluster) {
     dd <- as.dist((1 - df) / 2)
     hc <- hclust(dd)
-    df <- df[hc$order, hc$order]    
+    df <- df[hc$order, hc$order]
   }
   df[upper.tri(df)] <- NA
   df <- melt(df, na.rm=T)
