@@ -10,13 +10,14 @@ parameters <- c(
                 Km_PC_Pyruvate = 220, Km_PC_HCO3 = 3000, Kcat_PC = 60,
                 Km_ACSS2_Acetate = 73, Km_ACSS2_CoA2 = 11, Kcat_ACSS2 = 1.9,
                 Km_ACACA_AcCoA2 = 34, Km_ACACA_HCO3 = 2100, Kcat_ACACA = 10.1,
-                Km_FASN_AcCoA2 = 7, Km_FASN_NADPH = 5, Km_FASN_HCO3 = 6, Kcat_FASN = 2.7,
+                Km_FASN_AcCoA2 = 7, Km_FASN_NADPH = 5, Km_FASN_HCO3 = 3000, Kcat_FASN = 2.7,
                 Kcat_HDAC1 = 2.8,
                 Kcat_HDAC2 = 2,
                 Kcat_HDAC3 = 1.5,
                 Km_ACAT2_AcCoA2 = 29,
                 Km_HMGCS1_AcCoA2 = 14, Kcat_HMGCS1 = 0.041,
                 Km_KAT2A_AcCoA2 = 6.7, Kcat_KAT2A = 0.028,
+                Km_ACOT12_AcCoA2 = 47, Kcat_ACOT12 = 1.48,
                 # CONSTANTS
                 c_Pyruvate = 77,
                 c_HCO3 = 11200,
@@ -53,7 +54,7 @@ parameters <- c(
                 c_PC = 48.5013029,
                 c_PDHA1 = 13.2815118,
                 c_SLC16A3 = 0.5819519
-                # protein level 
+                # protein level
                 )
 
 initial_state <- c(

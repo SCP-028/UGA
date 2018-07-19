@@ -1,45 +1,17 @@
 setwd("C:/Users/jzhou/Desktop/expression_FPKM")
 filename <- list.files("./", pattern="RData$")
 projects <- sub("\\.RData", "", filename)
-mitochondria <- c("PDHA1", "CS", "ACOT13", "ACO2",
-                  "ACSS1", "PC", "OGDH", "IDH2")
-cytosol <- c("ACOT12", "ACLY", "HMGCS1", "HDAC1",
-             "HDAC2", "HDAC3", "ACSS2", "SLC16A3",
-             "KAT2A", "ACACA", "FASN")
+mitochondria <- c(
+    "PDHA1", "CS", "ACOT13", "ACO2", "ACSS1", "PC",
+    "OGDH", "IDH2", "SUCLG2", "SDHA", "FH", "MDH2"
+    )
+cytosol <- c(
+    "ACOT12", "ACLY", "HMGCS1", "HDAC1","HDAC2", "HDAC3",
+    "ACSS2", "SLC16A3", "KAT2A", "KAT2B", "EP300", "ACACA",
+    "FASN", "SLC13A5"
+    )
 genelist <- c(mitochondria, cytosol)
 genelist <- genelist[order(genelist)]
-
-retrieve.ensembAnnot <- function(df, codingOnly=F) {
-    #' Prepare for converting ensembl to gene symbol.
-    #'
-    #' Require biomaRt to work (retrieve annotation).
-    #'  
-    #' @param df The data frame whose rownames are to be converted.
-    #' @param codingOnly Keep only the protein-coding genes and ditch the rest.
-    #'
-    #' @return A data.frame of matching ensembl IDs and symbols.
-    library(biomaRt)
-    
-    if ("ensembl" %in% colnames(df)) {
-        rownames(df) <- as.character(df$ensembl)
-    }
-    # Retrieve biomaRt annotation data frame
-    ensembl <- sub("(.*)\\..*$", "\\1", rownames(df))
-    message("Downloading biomaRt manifest...")
-    mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
-    message("Retrieving annotation data...")
-    ensemblAnnot <- getBM(filters= "ensembl_gene_id",
-                          attributes= c("ensembl_gene_id", "hgnc_symbol",
-                                        "gene_biotype", "description"),
-                          values=ensembl, mart= mart)
-    ensemblAnnot <- ensemblAnnot[ensemblAnnot$hgnc_symbol != '', ]
-    if (codingOnly) {
-        ensemblAnnot <- ensemblAnnot[ensemblAnnot$gene_biotype == 'protein_coding', ]
-    }
-    ensemblAnnot$gene_biotype <- NULL
-    return(ensemblAnnot)
-}
-
 
 name.convert <- function(df, ensemblAnnot, codingOnly=F,
                          regex='', genelist='', description=F,
@@ -47,7 +19,7 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     #' Convert ensembl to gene symbol.
     #'
     #' Require dplyr to work (uses inner_join function).
-    #'  
+    #'
     #' @param df The data frame whose rownames are to be converted.
     #' @param ensemblAnnot Annotation data.frame from `retrieve.ensembAnnot`.
     #' @param codingOnly Keep only the protein-coding genes and ditch the rest.
@@ -103,14 +75,12 @@ name.convert <- function(df, ensemblAnnot, codingOnly=F,
     }
 }
 
-load(filename[1])
-ensembl <- retrieve.ensembAnnot(datan)
 result <- data.frame(row.names = genelist)
 for (i in seq_along(projects)) {
     load(filename[i])
     if (ncol(datan) >= 5 & ncol(datat) >= 5) {
-        datan <- name.convert(datan, ensembl, genelist=genelist)
-        datat <- name.convert(datat, ensembl, genelist=genelist)
+        datan <- name.convert(datan, annot, genelist=genelist)
+        datat <- name.convert(datat, annot, genelist=genelist)
         if (nrow(datan) == length(genelist) & nrow(datat) == length(genelist)) {
             dfn <- rowMeans(datan)
             dfn <- dfn[order(names(dfn))]
