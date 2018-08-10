@@ -339,7 +339,12 @@ if __name__ == "__main__":
         "SucCoA", "Succinate", "Fumarate", "Malate", "OXa", "AcCoA2",
         "Acetate", "NAD"
     ]
-    init_state = [1e-30 for _ in substrates]
+    init_state = pd.Series(
+        [
+            10, 132, 132, 34, 7.0,
+            10, 200, 1.5, 5.22, 61, 10,
+            125, 24.3
+        ], index=substrates)
     t = (0.0, 200.0)
     result = solve_ivp(michaelis_menten_model, y0=init_state, t_span=t)
     df = pd.DataFrame(result.y, index=substrates).T

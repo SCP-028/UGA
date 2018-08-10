@@ -1,7 +1,7 @@
 Acetate_blood = 125
 Kt_Acetate = 0.157
 CoA_total = 15
-HCO3 = 11200
+HCO3 = 5000
 NAD_total = 46.3
 Pyruvate = 77
 Vmax_SLC16A3 = 88.07

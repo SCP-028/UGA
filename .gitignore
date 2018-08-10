@@ -150,3 +150,5 @@ rsconnect/
 *.tgz
 .vscode/
 .Rproj.user
+.html
+.pdf
