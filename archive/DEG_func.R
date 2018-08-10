@@ -19,13 +19,13 @@ retrieve.ensemblAnnot <- function(df, codingOnly=F) {
     message("Retrieving annotation data...")
     ensemblAnnot <- getBM(filters= "ensembl_gene_id",
                           attributes= c("ensembl_gene_id", "hgnc_symbol",
-                                        "entrezgene", "gene_biotype", "description"),
+                                        "entrezgene", "gene_biotype", "description", "definition_1006"),
                           values=ensembl, mart= mart)
     ensemblAnnot <- ensemblAnnot[ensemblAnnot$hgnc_symbol != '', ]
     if (codingOnly) {
         ensemblAnnot <- ensemblAnnot[ensemblAnnot$gene_biotype == 'protein_coding', ]
+        ensemblAnnot$gene_biotype <- NULL
     }
-    ensemblAnnot$gene_biotype <- NULL
     return(ensemblAnnot)
 }
 

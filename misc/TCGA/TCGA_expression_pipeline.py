@@ -15,7 +15,7 @@ import pandas as pd
 logging.basicConfig(filename='./annotation/download.log', level=logging.INFO)
 try:
     os.chdir("/home/yizhou/dockers/RStudio/data/expression_count")
-except:
+except BaseException:
     os.chdir("C:/users/jzhou/Desktop/expression_count")
 
 
