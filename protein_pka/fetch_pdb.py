@@ -1,10 +1,15 @@
+#!python3
 import glob
 import json
 import subprocess
 
 import pandas as pd
+import plotly.graph_objs as go
+import plotly.offline as offline
 
 import xmltodict as xd
+
+offline.init_notebook_mode()
 
 
 def chunks(l, n):
@@ -59,6 +64,55 @@ annot.columns = ["PDB", "Ensembl"]
 PDB = pd.merge(PDB, annot, left_on=PDB["@structureId"], right_on=annot["PDB"])
 PDB = PDB.drop("key_0", axis=1)
 
-# Sort GTEx data by cell type -> organ
-ntissue = pd.read_table("/data/annotation/tissue_expression/human_protein_atlas_normal.tsv")
-ttissue = pd.read_table("/data/annotation/tissue_expression/human_protein_atlas_tumor.tsv")
+# Sort by subcellular localization
+protein_atlas = pd.read_table("/data/annotation/localization/protein_atlas_subcellular_location.tsv")
+uniprot = pd.read_table("/data/annotation/localization/uniprot_locations_all.tsv")
+reliability = ["Enhanced", "Supported", "Approved"]
+ans = pd.DataFrame(columns=[
+    "PDB", "Ensembl", "Gene name", "Localization", "Reliability",
+    "@title", "@expMethod", "@resolution", "@last_modification_date"
+])
+for item in reliability:
+    tmp = protein_atlas[protein_atlas["Reliability"] == item][["Gene", "Gene name", item]]
+    tmp = tmp.rename(columns={item: "Localization"})
+    tmp = tmp[~tmp["Gene"].isin(ans["Ensembl"])]
+    tmp = pd.merge(PDB, tmp, left_on="Ensembl", right_on="Gene", how="inner").drop("Gene", axis=1)
+    tmp["Reliability"] = item
+    ans = pd.concat([ans, tmp], ignore_index=True)
+
+ans = ans[[
+    "PDB", "Ensembl", "Gene name", "Localization", "Reliability",
+    "@title", "@expMethod", "@resolution", "@last_modification_date"
+]]
+ans = ans.dropna()
+ans.to_pickle("/data/protein_pka/result/PDB_description.pkl")
+localization = dict([[key, []] for key in set([x for item in ans["Localization"].unique() for x in item.split(";")])])
+for i, row in ans.iterrows():
+    for organelle in row["Localization"].split(";"):
+        localization[organelle] += [[row["PDB"], row["Ensembl"], row["Gene name"]]]
+
+pI = pd.read_pickle("/data/protein_pka/result/pI.pkl")
+
+ans = pd.DataFrame()
+organelle = "Nucleoplasm"
+tmp = pI[pI["protein"].isin([x[0] for x in localization[organelle]])]
+tmp["Localization"] = organelle
+ans = pd.concat([ans, tmp], ignore_index=True)
+
+for organelle in localization.keys():
+    tmp = pI[pI["protein"].isin([x[0] for x in localization[organelle]])]
+    tmp["Localization"] = organelle
+    ans = pd.concat([ans, tmp], ignore_index=True)
+
+organelles = ans["Localization"].unique()
+data = [go.Histogram(x=ans[ans["Localization"] == organelle]["pI"], opacity=0.5, name=organelle) for organelle in organelles]
+fig = {
+    "data": data,
+    "layout": {
+        "title": "Distribution of predicted protein pI",
+        "xaxis": {"title": "pH"},
+        "yaxis": {"title": "Count"},
+        "barmode": "overlay"
+    }
+}
+offline.iplot(fig, show_link=False)
