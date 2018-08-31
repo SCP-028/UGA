@@ -1,3 +1,9 @@
+import re
+
+import numpy as np
+import pandas as pd
+
+
 def parse_ID(seq):
     """Return the EC number inside the input string.
 
@@ -35,45 +41,88 @@ def parse_protein(seq):
     return seq
 
 
-def parse_ph_optimum(seq, human):
-    """Extract the pH optimum values of human proteins.
+def parse_pH(seq, protein, condition=["optimum", "range"]):
+    """Extract the pH optimum / range values of human proteins.
 
     Parameters
     ----------
         seq: str
-        human: list[str] or set(str)
+        protein: set(str)
+        condition: str, "optimum" or "range"
 
     Returns
     -------
         list[list[str], str] human protein IDs and the pH optimum.
         Note that the "optimum" could still be a range.
     """
-    human = set(human)
-    seq = seq.split("\nPHO\t")
-    seq = [x.split(" ")[:2] for x in seq]  # protein hash ID & pH
+    if condition == "optimum":
+        seq = seq.split("\nPHO\t")
+    elif condition == "range":
+        seq = seq.split("\nPHR\t")
+    else:
+        raise ValueError("The parameter <condition> must be 'optimum' or 'range'.")
+    seq = [x.split(" ", maxsplit=2) for x in seq]  # protein hash ID, pH & comment
     seq = seq[1:]  # remove the "PH_OPTIMUM at the beginning"
-    seq = [[parse_hash_id(x[0]), x[1]] for x in seq]
-    seq = [x for x in seq if set(x[0]).intersection(human)]
+    seq = [[parse_hash_id(x[0]), x[1], x[2]] for x in seq]
+    seq = [x for x in seq if set(x[0]).intersection(protein)]
     return seq
+
+
+def populate_pH_optimum(seq, uuid, protein):
+    """Generate a [pandas.DataFrame] with pH optimum information.
+
+    Parameters
+    ----------
+        seq: list[list[str], str]
+            Output from `parse_pH_optimum`.
+        uuid: str
+        protein: set(str)
+    """
+    ans = pd.DataFrame(columns=["uuid", "protein", "pH", "activity", "pH_range_comment"])
+    for entry in seq:
+        entry[0] = set(entry[0]).intersection(protein)
+        for p in entry[0]:
+            row = pd.Series({
+                "uuid": uuid,
+                "protein": p,
+                "pH": entry[1],
+                "activity": 1,
+                "pH_range_comment": entry[2]
+            })
+            ans = ans.append(row, ignore_index=True)
+    return ans
+
+
+def populate_pH_range(seq, uuid, protein):
+    # TODO: extract information from comment
+    ans = pd.DataFrame(columns=["uuid", "protein", "pH", "activity", "pH_range_comment"])
+    for entry in seq:
+        entry[0] = set(entry[0]).intersection(protein)
+        for p in entry[0]:
+            row = pd.Series({
+                "uuid": uuid,
+                "protein": p,
+                "pH": entry[1],
+                "activity": np.nan,
+                "pH_range_comment": entry[2]
+            })
+            ans = ans.append(row, ignore_index=True)
+    return ans
 
 
 with open("/data/annotation/brenda/brenda_download.txt", "r", encoding="utf-8") as f:
     annot = [line.strip() for line in f.readlines()]
 # ECs are separated with "///"
 annotation = "\n".join(annot).split("\n\n///\n")
-ans = {}
-for enzyme in annotation:
+ans = pd.DataFrame(columns=["uuid", "protein", "pH", "activity", "pH_range_comment"])
+for i, enzyme in enumerate(annotation):
     enzyme = "".join(enzyme).split("\n\n")
     info = [x for x in enzyme if x.startswith(("ID", "PROTEIN", "PH_OPTIMUM", "PH_RANGE"))]
+    # TODO: figure out how to filter the proteins with missing values. Approach now is too strict.
     if (len(info) == 4):
-        uuid = parse_ID(info[0])
+        uuid = parse_ID(info[0])  # TODO: "()" not in uuid
         protein = parse_protein(info[1])
-        pH_optimum = parse_ph_optimum(info[2], protein)
-        pH_range = parse_ph_range(info[3], protein)
-        ans[uuid] = {
-            "protein": protein,
-            "pH_optimum": pH_optimum,
-            "pH_range": pH_range
-        }
-
-# TODO: figure out how to filter the proteins with missing values
+        pH_optimum = parse_pH(info[2], protein, condition="optimum")
+        pH_range = parse_pH(info[3], protein, condition="range")
+        ans = ans.append(populate_pH_optimum(pH_optimum, uuid, protein))
+        ans = ans.append(populate_pH_range(pH_range, uuid, protein))
