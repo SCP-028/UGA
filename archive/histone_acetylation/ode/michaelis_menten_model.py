@@ -1,17 +1,152 @@
-#!python3
 import matplotlib.pyplot as plt
+import seaborn as sns
+
 import numpy as np
 import pandas as pd
-import plotly.graph_objs as go
-import plotly.offline as offline
-from scipy.integrate import odeint, solve_ivp
+from scipy.integrate import solve_ivp
 
-import parameters.kcat as Kcat
-import parameters.ki as Ki
-import parameters.km as Km
-from parameters.const import *
+sns.set_style("whitegrid")
+sns.set_context("poster")
 
-# offline.init_notebook_mode()
+
+class kcat:
+    def __init__(self):
+        self.ACACA = 10.1
+        self.ACAT2 = 2.1
+        self.ACLY = 2.2
+        self.ACO2_1 = 5.3
+        self.ACO2_2 = 1.1
+        self.ACOT12 = 1.48
+        self.ACOT13 = 1.48
+        self.ACSS1 = 1.9
+        self.ACSS2 = 1.9
+        self.CS = 167
+        self.EP300 = 0.0383
+        self.FASN = 2.7
+        self.FH = 51.7
+        self.HDAC1 = 2.8
+        self.HDAC2 = 2
+        self.HDAC3 = 1.5
+        self.HMGCS1 = 0.041
+        self.IDH2 = 30
+        self.KAT2A = 0.012
+        self.KAT2B = 0.005
+        self.MDH2 = 18
+        self.OGDH = 30
+        self.PC = 60
+        self.PDHA1 = 69
+        self.SDHA = 83.3
+        self.SLC13A5 = 0.02  # CTP
+        self.SUCLG2 = 201
+
+
+class km:
+    def __init__(self):
+        self.ACACA_AcCoA = 34
+        self.ACACA_HCO3 = 2100
+        self.ACAT2_AcCoA = 29
+        self.ACLY_Citrate = 78
+        self.ACLY_CoA = 14
+        self.ACO2_Citrate = 480
+        self.ACO2_Isocitrate = 120
+        self.ACOT12_AcCoA = 47
+        self.ACOT13_AcCoA = 47
+        self.ACSS1_Acetate = 73
+        self.ACSS1_CoA = 11
+        self.ACSS2_Acetate = 73
+        self.ACSS2_CoA = 11
+        self.CS_AcCoA = 5
+        self.CS_OXa = 5.9
+        self.EP300_AcCoA = 0.28
+        self.FASN_AcCoA = 7
+        self.FASN_HCO3 = 2100
+        self.FASN_NADPH = 5
+        self.FH_Fumarate = 13
+        self.HMGCS1_AcCoA = 14
+        self.IDH2_Isocitrate = 320  # 2400
+        self.IDH2_NAD = 80
+        self.KAT2A_AcCoA = 6.7
+        self.KAT2B_AcCoA = 1.1
+        self.MDH2_Malate = 560
+        self.MDH2_NAD = 140
+        self.OGDH_AlphaKG = 13  # 4000
+        self.OGDH_NAD = 80
+        self.PC_Pyruvate = 220
+        self.PC_HCO3 = 3200
+        self.PDHA1_Pyruvate = 64.8
+        self.PDHA1_NAD = 33
+        self.PDHA1_CoA = 4
+        self.SDHA_Succinate = 20
+        self.SDHA_Fumarate = 25
+        self.SLC13A5_Citrate = 600  # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2913483/
+        self.SUCLG2_SucCoA = 86
+
+
+class ki:
+    def __init__(self):
+        self.ACLY_AcCoA = 10
+        self.ACO2_Isocitrate = 410
+        self.ACO2_Citrate = 190
+        self.ACOT12_Acetate = 50  # 50 - 200
+        self.ACOT12_CoA = 17
+        self.ACSS1_AcCoA = 2700
+        self.ACSS2_AcCoA = 10
+        self.CS_Citrate = 190
+        self.SLC13A5_Citrate = 190
+        self.FH_Malate = 2500
+        self.HDAC1_Acetate = 50  # 50 - 200
+        self.HDAC2_Acetate = 50  # 50 - 200
+        self.HDAC3_Acetate = 50  # 50 - 200
+        self.IDH2_AlphaKG = 0.29
+        self.MDH2_OXa = 9.5
+        self.OGDH_SucCoA = 4
+        self.PC_OXa = 9.5
+        self.PDHA1_AcCoA = 20
+        self.SDHA_Fumarate = 1300
+        self.SUCLG2_Succinate = 14  # SUDG1, value not changed
+
+
+Km = km()
+Kcat = kcat()
+Ki = ki()
+
+Acetate_blood = 125
+Kt_Acetate = 0.157
+CoA_total = 15
+HCO3 = 5000
+NAD_total = 46.3
+Pyruvate = 77
+Vmax_SLC16A3 = 88.07
+V_ATP_ss = 0.2
+n_ATP_NAD = 2.5
+NADH_ss = 22
+# expression from LIHC
+ACACA = 1.3937241
+ACLY = 5.9057259
+ACO2 = 12.529593
+ACOT12 = 21.4535639
+ACOT13 = 11.3360529
+ACSS1 = 0.7508832
+ACSS2 = 14.7159301
+CS = 5.3787853
+EP300 = 3.5370080
+FASN = 26.7645829
+FH = 70.3469031
+HDAC1 = 9.6725321
+HDAC2 = 1.3847293
+HDAC3 = 5.3305112
+HMGCS1 = 26.2653794
+IDH2 = 92.8854856
+KAT2A = 3.4616622
+KAT2B = 5.8884689
+MDH2 = 46.9342578
+OGDH = 13.7951864
+PC = 48.5013029
+PDHA1 = 13.2815118
+SDHA = 26.5377130
+SLC13A5 = 41.3838758
+SLC16A3 = 0.5819519
+SUCLG2 = 54.2205369
 
 
 def michaelis_menten_model(t, y):
@@ -34,8 +169,7 @@ def michaelis_menten_model(t, y):
         CoA2 = max(CoA_total - AcCoA2, 0)
         NADH = max(NAD_total - NAD, 0)
     """
-    AcCoA1, Citrate1, Citrate2, Isocitrate, AlphaKG, SucCoA, Succinate, \
-        Fumarate, Malate, OXa, AcCoA2, Acetate, NAD = y
+    AcCoA1, Citrate1, Citrate2, Isocitrate, AlphaKG, SucCoA, Succinate, Fumarate, Malate, OXa, AcCoA2, Acetate, NAD = y
     # Ac-CoA1 = PDHA1 + ACSS1 - CS
     dAcCoA1dt = (
         (
@@ -320,7 +454,7 @@ def michaelis_menten_model(t, y):
             )
         ) -
         (
-            (Kcat.MDH2 * MDH2 * Malate) /
+            (Kcat.MDH2 * MDH2 * Malate * NAD) /
             (Km.MDH2_Malate * (1 + (OXa / Ki.MDH2_OXa)) + Malate)
         )
     )
@@ -333,37 +467,26 @@ def michaelis_menten_model(t, y):
     return dxdt
 
 
-if __name__ == "__main__":
-    substrates = [
-        "AcCoA1", "Citrate1", "Citrate2", "Isocitrate", "AlphaKG",
-        "SucCoA", "Succinate", "Fumarate", "Malate", "OXa", "AcCoA2",
-        "Acetate", "NAD"
-    ]
-    init_state = pd.Series(
-        [
-            10, 132, 132, 34, 7.0,
-            10, 200, 1.5, 5.22, 61, 10,
-            125, 24.3
-        ], index=substrates)
-    t = (0.0, 200.0)
-    result = solve_ivp(michaelis_menten_model, y0=init_state, t_span=t)
-    df = pd.DataFrame(result.y, index=substrates).T
-    df["t"] = result.t
-    data = []
-    for st in substrates:
-        data.append({
-            "x": df["t"],
-            "y": df[st],
-            "name": st,
-            "opacity": 0.7,
-            "mode": "lines"
-        })
-    fig = {
-        "data": data,
-        "layout": {
-            "title": "Histone Acetylation Pathways",
-            "xaxis": {"title": "Time Step"},
-            "yaxis": {"title": "Substrate"}
-        }
-    }
-    offline.iplot(fig, filename="histone_acetylation", show_link=False)
+# Solving ODE
+substrates = [
+    "AcCoA1", "Citrate1", "Citrate2", "Isocitrate", "AlphaKG",
+    "SucCoA", "Succinate", "Fumarate", "Malate", "OXa", "AcCoA2",
+    "Acetate", "NAD"
+]
+init_state = pd.Series(
+    [
+        10, 132, 132, 34, 7.0,
+        10, 20, 150, 5.22, 61, 10,
+        125, 24.3
+    ], index=substrates)
+t = (0.0, 300.0)
+result = solve_ivp(michaelis_menten_model, y0=init_state, t_span=t)
+df = pd.DataFrame(result.y, index=substrates).T
+df["t"] = result.t
+
+
+# Plots for each substrate
+for substrate in substrates:
+    tmp = df[["t", substrate]]
+    plt.figure(figsize=(16, 8))
+    ax = sns.lineplot(x="t", y=substrate, data=tmp)
