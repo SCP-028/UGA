@@ -80,19 +80,16 @@ def uuidToBarcode(df, directory='./annotation'):
                     "value": uuid
                 }
             },
-            "format":
-            "TSV",
+            "format": "TSV",
             # There must be no space after comma
-            "fields":
-            "file_id,file_name,cases.samples.submitter_id,cases.samples.sample_type,cases.project.project_id,cases.diagnoses.tumor_stage",
-            "size":
-            len(uuid)
+            "fields": "file_id,file_name,cases.samples.submitter_id,cases.samples.sample_type,cases.project.project_id,cases.diagnoses.tumor_stage,cases.case_id",
+            "size": len(uuid)
         }
-        url = "https://gdc-api.nci.nih.gov/files"
+        url = "https://api.gdc.cancer.gov/files"
         r = requests.post(url, json=params)  # API requires using POST method
         with open(f"{directory}/annotation.tsv", "w") as f:
             f.write(r.text)  # save raw annotation file
-    annot = pd.read_csv(f"{directory}/annotation.tsv", sep="\t")
+    annot = pd.read_table(f"{directory}/annotation.tsv")
     annot = annot[[
         'file_name', 'cases.0.project.project_id',
         'cases.0.samples.0.submitter_id', 'cases.0.samples.0.sample_type',
