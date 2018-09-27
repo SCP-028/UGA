@@ -37,7 +37,7 @@ def reverse_scientic_notation(x):
     return "".join(x)
 
 
-# # pK values of proteins with Ensembl IDs
+# # pK values of proteins with Uniprot IDs
 if not pathlib.Path(f"{ROOTDIR}/pK_fixed.csv").is_file():
     pK = pd.read_csv(f"{ROOTDIR}/pka_cleaned_merged.csv")
     # fix IDs automatically converted to scientific notations
@@ -74,6 +74,7 @@ if not pathlib.Path(f"{ROOTDIR}/result/pdb_meta/pdb_general.json").is_file():
 PDB_general = pd.read_json(f"{ROOTDIR}/result/pdb_meta/pdb_general.json").T
 PDB_general = PDB_general[["@structureId", "@deposition_date", "@expMethod", "@resolution"]].reset_index(drop=True)
 print(f"The general PDB annotation for {PDB_general.shape[0]} structures were downloaded.")
+# PDB_general.sample(1)
 
 # # Get PDB entity information
 if not pathlib.Path(f"{ROOTDIR}/result/pdb_meta/pdb_entity.json").is_file():
@@ -107,22 +108,9 @@ PDB_entity = pd.concat([PDB_entity_single, PDB_entity_multi], axis=0).reset_inde
 PDB_entity["@entityNr"] = PDB_entity["polymer"].apply(lambda x: x["@entityNr"])
 PDB_entity["@length"] = PDB_entity["polymer"].apply(lambda x: x["@length"])
 PDB_entity["@chain"] = PDB_entity["polymer"].apply(lambda x: x["chain"])  # dict
+PDB_entity["@Taxonomy"] = [x["Taxonomy"] if "Taxonomy" in x else np.nan for x in PDB_entity["polymer"]]
 PDB_entity = PDB_entity.dropna()
 print(f"After unpacking, there are {PDB_entity.shape[0]} entries in PDB_entity.")
-
-# # Filter list, only keep human proteins
-# ftp://ftp.wwpdb.org/pub/pdb/derived_data/index/source.idx
-df = pd.read_table("/home/jovyan/data/annotation/taxonomy/pdb_source.csv", header=None, sep=",")
-df.columns = ["PDB", "taxonomy"]
-df = df[~df["taxonomy"].isna()]
-df = df[df["taxonomy"].str.contains("HOMO SAPIENS")]  # list as string
-
-PDB_general = PDB_general[PDB_general["@structureId"].isin(df["PDB"])]
-print(f"{len(PDB_general['@structureId'].unique())} entries in PDB_general are human proteins.")
-PDB_entity = PDB_entity[PDB_entity["@id"].isin(df["PDB"])]
-print(f"{len(PDB_entity['@id'].unique())} entries in PDB_general are human proteins.")
-
-# PDB_general[~PDB_general["@structureId"].isin(PDB_entity["@id"].unique())]
 
 # # Convert to Ensembl Gene ID
 # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz
@@ -136,10 +124,22 @@ print(f'{len(pd.concat(g for _, g in annot.groupby("Ensembl") if len(g) > 1)["En
 
 # # Combine previous data frames
 PDB = pd.merge(PDB_entity, annot, left_on=PDB_entity["@id"], right_on=annot["PDB"])
+# only keep human proteins
+PDB = PDB[PDB["@Taxonomy"].astype(str).str.contains("Homo sapiens")]
+# also need date, method and resolution
 PDB = PDB[["@id", "Ensembl", "@entityNr", "@length", "@chain"]]
-
 PDB = pd.merge(PDB, PDB_general, left_on=PDB["@id"], right_on=PDB_general["@structureId"])
 PDB = PDB.drop(["key_0", "@structureId"], axis=1).reset_index(drop=True)
-print(f'There are {len(PDB["Ensembl"].unique())} unique Ensembl IDs and {len(PDB["@id"].unique())} unique PDB structures.')
 
-# PDB[PDB["Ensembl"].duplicated()].sort_values(["Ensembl","@id", "@length", "@deposition_date", "@resolution"])
+print(f'There are {len(PDB["Ensembl"].unique())} unique Ensembl IDs and {len(PDB["@id"].unique())} unique PDB structures.')
+print(f'{len(PDB_entity[~PDB_entity["@id"].isin(PDB["@id"])]["@id"].unique())} PDB entries don\'t have matching Ensembl IDs / are\'t human proteins.')
+
+# represent `@chain` in a way that's easier to manipulate
+PDB["@chain"] = [[x] if isinstance(x, dict) else x for x in PDB["@chain"]]
+PDB["@chain"] = PDB["@chain"].apply(lambda x: "".join(sorted([y["@id"] for y in x])))
+
+# # removing duplicates
+# Same gene, same structure, same chain(s)
+PDB = PDB.sort_values("@length", ascending=False).drop_duplicates(subset=["Ensembl", "@id", "@chain"], keep="first")
+
+# PDB[PDB["@id"].duplicated(keep=False)].sort_values(["Ensembl","@id", "@length", "@deposition_date", "@resolution"])
