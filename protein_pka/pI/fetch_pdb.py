@@ -37,6 +37,20 @@ def reverse_scientic_notation(x):
     return "".join(x)
 
 
+def unpack_list_in_df(df, col_target):
+    # Flatten columns of lists
+    col_flat = [item for sublist in df[col_target] for item in sublist]
+    # Row numbers to repeat
+    lens = df[col_target].apply(len)
+    vals = range(df.shape[0])
+    ilocations = np.repeat(vals, lens)
+    # Replicate rows and add flattened column of lists
+    cols = [i for i, c in enumerate(df.columns) if c != col_target]
+    new_df = df.iloc[ilocations, cols].copy()
+    new_df[col_target] = col_flat
+    return new_df
+
+
 # # pK values of proteins with Uniprot IDs
 if not pathlib.Path(f"{ROOTDIR}/pK_fixed.csv").is_file():
     pK = pd.read_csv(f"{ROOTDIR}/pka_cleaned_merged.csv")
@@ -72,6 +86,7 @@ if not pathlib.Path(f"{ROOTDIR}/result/pdb_meta/pdb_general.json").is_file():
         f.write(json.dumps(ans))
 
 PDB_general = pd.read_json(f"{ROOTDIR}/result/pdb_meta/pdb_general.json").T
+PDB_general = PDB_general[PDB_general["@status"] == "CURRENT"]
 PDB_general = PDB_general[["@structureId", "@deposition_date", "@expMethod", "@resolution"]].reset_index(drop=True)
 print(f"The general PDB annotation for {PDB_general.shape[0]} structures were downloaded.")
 # PDB_general.sample(1)
@@ -101,45 +116,56 @@ print(f"The PDB entity annotation for {PDB_entity.shape[0]} structures were down
 PDB_entity_single = PDB_entity[PDB_entity["polymer"].apply(lambda x: isinstance(x, dict))]
 PDB_entity_multi = PDB_entity[PDB_entity["polymer"].apply(lambda x: isinstance(x, list))]
 # Unpack list in cell
-s = PDB_entity_multi.apply(lambda x: pd.Series(x['polymer']), axis=1).stack().reset_index(level=1, drop=True)
-s.name = "polymer"
-PDB_entity_multi = PDB_entity_multi.drop("polymer", axis=1).join(s).reset_index(drop=True)
+PDB_entity_multi = unpack_list_in_df(PDB_entity_multi, "polymer")
+
 PDB_entity = pd.concat([PDB_entity_single, PDB_entity_multi], axis=0).reset_index(drop=True)
-PDB_entity["@entityNr"] = PDB_entity["polymer"].apply(lambda x: x["@entityNr"])
-PDB_entity["@length"] = PDB_entity["polymer"].apply(lambda x: x["@length"])
-PDB_entity["@chain"] = PDB_entity["polymer"].apply(lambda x: x["chain"])  # dict
+PDB_entity["@length"] = PDB_entity["polymer"].map(lambda x: x["@length"])
+PDB_entity["@chain"] = PDB_entity["polymer"].map(lambda x: x["chain"])  # dict
+PDB_entity["@weight"] = PDB_entity["polymer"].map(lambda x: x["@weight"])
 PDB_entity["@Taxonomy"] = [x["Taxonomy"] if "Taxonomy" in x else np.nan for x in PDB_entity["polymer"]]
-PDB_entity = PDB_entity.dropna()
+PDB_entity["@synonym"] = [x["synonym"] if "synonym" in x else np.nan for x in PDB_entity["polymer"]]
+PDB_entity["@uniprot"] = [x["macroMolecule"] if "macroMolecule" in x else np.nan for x in PDB_entity["polymer"]]
+PDB_entity = PDB_entity.drop("polymer", axis=1).dropna()
+
+# represent `@chain` in a way that's easier to manipulate
+PDB_entity["@chain"] = [[x] if isinstance(x, dict) else x for x in PDB_entity["@chain"]]
+PDB_entity["@chain"] = PDB_entity["@chain"].map(lambda x: "".join(sorted([y["@id"] for y in x])))
+PDB_entity["@chain"] = PDB_entity["@chain"].str.upper()
+
+# same goes for `@synonym`
+PDB_entity["@synonym"] = [[x] if isinstance(x, dict) else x for x in PDB_entity["@synonym"]]
+PDB_entity["@synonym"] = PDB_entity["@synonym"].map(lambda x: "".join(sorted([y["@name"] for y in x])))
+PDB_entity["@synonym"] = PDB_entity["@synonym"].str.upper()
+
+# and uniprot
+PDB_entity["@uniprot"] = [[x] if isinstance(x, dict) else x for x in PDB_entity["@uniprot"]]
+PDB_entity["@uniprot"] = PDB_entity["@uniprot"].map(lambda x: [y["accession"]["@id"] for y in x])
+PDB_entity = unpack_list_in_df(PDB_entity, "@uniprot")
 print(f"After unpacking, there are {PDB_entity.shape[0]} entries in PDB_entity.")
 
 # # Convert to Ensembl Gene ID
 # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz
 annotation = pd.read_csv("/home/jovyan/data/annotation/uniprot_id_map/HUMAN_9606_idmapping.csv")
-uniprot_pdb = annotation[(annotation["ID"].isin(PDB_general["@structureId"])) & (annotation["ID_type"] == "PDB")]
 uniprot_ensembl = annotation[annotation["ID_type"] == "Ensembl"]
-annot = pd.merge(uniprot_pdb, uniprot_ensembl, on="UniProtKB_AC")[["ID_x", "ID_y"]].reset_index(drop=True)
-annot.columns = ["PDB", "Ensembl"]
-print(f'{len(pd.concat(g for _, g in annot.groupby("PDB") if len(g) > 1)["PDB"].unique())} PDB IDs map to multiple Ensembl IDs.')
-print(f'{len(pd.concat(g for _, g in annot.groupby("Ensembl") if len(g) > 1)["Ensembl"].unique())} Ensembl IDs map to multiple PDB IDs.')
+PDB = pd.merge(PDB_entity, uniprot_ensembl, left_on=PDB_entity["@uniprot"], right_on=uniprot_ensembl["UniProtKB_AC"])
 
 # # Combine previous data frames
-PDB = pd.merge(PDB_entity, annot, left_on=PDB_entity["@id"], right_on=annot["PDB"])
-# only keep human proteins
 PDB = PDB[PDB["@Taxonomy"].astype(str).str.contains("Homo sapiens")]
-# also need date, method and resolution
-PDB = PDB[["@id", "Ensembl", "@entityNr", "@length", "@chain"]]
+PDB = PDB[["@uniprot", "@id", "ID", "@length", "@weight", "@chain", "@synonym"]]
 PDB = pd.merge(PDB, PDB_general, left_on=PDB["@id"], right_on=PDB_general["@structureId"])
 PDB = PDB.drop(["key_0", "@structureId"], axis=1).reset_index(drop=True)
+PDB = PDB.rename(columns={"ID": "Ensembl"})
 
 print(f'There are {len(PDB["Ensembl"].unique())} unique Ensembl IDs and {len(PDB["@id"].unique())} unique PDB structures.')
 print(f'{len(PDB_entity[~PDB_entity["@id"].isin(PDB["@id"])]["@id"].unique())} PDB entries don\'t have matching Ensembl IDs / are\'t human proteins.')
 
-# represent `@chain` in a way that's easier to manipulate
-PDB["@chain"] = [[x] if isinstance(x, dict) else x for x in PDB["@chain"]]
-PDB["@chain"] = PDB["@chain"].apply(lambda x: "".join(sorted([y["@id"] for y in x])))
-
-# # removing duplicates
-# Same gene, same structure, same chain(s)
-PDB = PDB.sort_values("@length", ascending=False).drop_duplicates(subset=["Ensembl", "@id", "@chain"], keep="first")
-
-# PDB[PDB["@id"].duplicated(keep=False)].sort_values(["Ensembl","@id", "@length", "@deposition_date", "@resolution"])
+# # Remove duplicates
+# Same gene, same structure, same chains (technical replicates)
+PDB = PDB.sort_values("@length", ascending=False).drop_duplicates(keep="first")
+# each unique protein, only keep the ones with max(@length)
+PDB = PDB[PDB["@length"] == PDB.groupby(["@uniprot", "@chain", "Ensembl"])["@length"].transform(max)]
+# remaining duplicates, keep the one with latest deposition date
+PDB = PDB[PDB["@deposition_date"] == PDB.groupby(["@uniprot", "@chain", "Ensembl"])["@deposition_date"].transform(max)]
+# ...highest resolution
+PDB = PDB[PDB["@resolution"] == PDB.groupby(["@uniprot", "@chain", "Ensembl"])["@resolution"].transform(min)]
+print(f'There are {len(PDB["@id"].unique())} unique PDB structures, and {len(PDB["Ensembl"].unique())} unique Ensembl genes')
