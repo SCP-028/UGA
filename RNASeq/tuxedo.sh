@@ -1,5 +1,6 @@
 #!/bin/bash
-PROJECT_NAME="GSE75168" # single-ended
+PROJECT_NAME="GSE75168"
+PAIRED_END=false
 declare -a SRX=("SRX1438068" "SRX1438069" "SRX1438070" "SRX1438074" "SRX1438075" "SRX1438076")
 # MCF10A - 1, 2, 3    |  MDA MB-231 - 1, 2, 3
 ROOTDIR=$(pwd)
@@ -28,6 +29,9 @@ if [ ! -d FastQC* ]|| [ ! USE_CACHE ]; then
     chmod +x FastQC/fastqc
 fi
 export PATH="$SOFTWAREDIR/FastQC:$PATH"
+
+# multiQC: aggregating FastQC results
+conda install -c bioconda multiqc
 
 if [ ! -d Trimmomatic* ] || [ ! USE_CACHE]; then
     wget "http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.38.zip"
@@ -66,6 +70,11 @@ if [ ! -d stringtie* ]|| [ ! USE_CACHE ]; then
 fi
 export PATH="$(find $SOFTWAREDIR -type d -name 'stringtie*'):$PATH"
 
+# prepDE.py: prepare counts matrix for DESeq2 / edgeR
+if [ ! -f prepDE.py ] || [ ! USE_CACHE ]; then
+    wget "https://ccb.jhu.edu/software/stringtie/dl/prepDE.py"
+fi
+
 # download genome index files
 cd $ROOTDIR
 if [ ! -d "$ROOTDIR/grch38" ]|| [ ! USE_CACHE ];then
@@ -88,7 +97,7 @@ for f in "$SRX[@]"
 do
     # download fastq files
     if [ ! -f "$f.fastq" ];then
-        prefetch "$f" && vdb-dump -f fastq "$HOME/ncbi/public/sra/$f.sra" > "$f.fastq"
+        prefetch "$f" && fastq-dump "$f"
     fi
 done
 
@@ -96,6 +105,7 @@ done
 if [ ! -d "$FASTQDIR/$PROJECT_NAME/qc/before_trim" ];then
     mkdir -p "$FASTQDIR/$PROJECT_NAME/qc/before_trim"
     fastqc $(printf "%s.fastq " "${SRX[@]}") -o "$FASTQDIR/$PROJECT_NAME/qc/before_trim" -t ${#SRX[@]}
+    multiqc "$FASTQDIR/$PROJECT_NAME/qc/before_trim" -o "$FASTQDIR/$PROJECT_NAME/qc/before_trim"
 fi
 
 for f in "$SRX[@]"
@@ -111,11 +121,14 @@ done
 if [ ! -d "$FASTQDIR/$PROJECT_NAME/qc/after_trim" ];then
     mkdir -p "$FASTQDIR/$PROJECT_NAME/qc/after_trim"
     fastqc $(printf "%s.trimmed.fq " "${SRX[@]}") -o "$FASTQDIR/$PROJECT_NAME/qc/after_trim/" -t ${#SRX[@]}
+    multiqc "$FASTQDIR/$PROJECT_NAME/qc/after_trim" -o "$FASTQDIR/$PROJECT_NAME/qc/after_trim"
 fi
 
 # Check quality control reports before moving forward!
 ###########################################################################
 # Per base sequence quality should be mostly in the green range           #
+#     - If not, trim the 5' end or the 3' end                             #
+#     - Be cautious with paired-end data                                  #
 # Per sequence GC content should be within the 30%-70% range              #
 # Sequence length distribution could help determine MINLEN in trimmomatic #
 # Adapter content should be around 0 after trimming                       #
@@ -143,6 +156,7 @@ do
     mkdir -p "$FASTQDIR/$PROJECT_NAME/ballgown/$f"
     stringtie -e -B -p 30 -G stringtie_merged.gtf -o "$FASTQDIR/$PROJECT_NAME/ballgown/$f/$f.gtf" "$f.bam"
 done
+python2 $SOFTWAREDIR/prepDE.py --length=100 # use DESeq2 / edgeR for DEA
 cd $ROOTDIR
 
 # Use R package ballgown for differential expression analysis
