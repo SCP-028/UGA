@@ -124,21 +124,23 @@ class TCGADownload:
         self.finished.append(uuid)
         asyncio.sleep(1)
 
-    def retrieve_annotation(self, df):
+    def retrieve_annotation(df):
         """ Use manifest file to retrieve barcode information using GDC API.
         Parameters
         ----------
-            df: a [pandas dataframe] of the manifest file used to download TCGA files.
+            df: <pandas.DataFrame>
+                The manifest file used to download TCGA files.
 
         Returns
         -------
-            annot: a [pandas dataframe] of more information, and
-            annotDict: a dict of {filename: barcode}.
+            annot: a <pandas.DataFrame> of more information, and
+            annotDict: a <dict> of {uuid: barcode}.
         """
+        url = "https://api.gdc.cancer.gov/"
         if not os.path.isfile("annot.csv"):
             if not os.path.isfile("annotation.tsv"):
-                uuid = df.id.tolist()
-                url = self.url + "files/"
+                uuid = df["id"].tolist()
+                url = url + "files/"
                 params = {
                     "filters": {
                         "op": "in",
@@ -150,7 +152,7 @@ class TCGADownload:
                     "format": "TSV",
                     # There must be no space after comma
                     "fields":
-                    "file_id,file_name,cases.samples.submitter_id,cases.samples.sample_type,cases.project.project_id,cases.diagnoses.tumor_stage",
+                    "file_id,file_name,cases.samples.portions.analytes.aliquots.submitter_id,cases.samples.sample_type,cases.project.project_id,cases.diagnoses.tumor_stage,cases.case_id",
                     "size": len(uuid)
                 }
                 r = requests.post(url, json=params)  # API requires using POST method
@@ -158,11 +160,12 @@ class TCGADownload:
                     f.write(r.text)
             annotation = pd.read_table("annotation.tsv")
             annotation = annotation[[
-                "file_id", "file_name", "cases.0.project.project_id",
-                "cases.0.samples.0.submitter_id", "cases.0.samples.0.sample_type",
-                "cases.0.diagnoses.0.tumor_stage"
+                "cases.0.project.project_id", "cases.0.samples.0.sample_type",
+                "cases.0.diagnoses.0.tumor_stage", "cases.0.case_id",
+                "cases.0.samples.0.portions.0.analytes.0.aliquots.0.submitter_id",
+                "file_id", "file_name"
             ]]
-            annotation.columns = ["uuid", "filename", "project", "barcode", "sample_type", "tumor_stage"]
+            annotation.columns = ["project", "sample_type", "tumor_stage", "caseID", "barcode", "fileID", "filename"]
             # get specific digit in barcode
             # annot.sample_type = pd.Series([int(x[-3]) for x in annot.barcode])
             # annot.loc[annot.sample_type == 0, "sample_type"] = "tumor"
@@ -170,7 +173,7 @@ class TCGADownload:
             annotation.to_csv("annot.csv", index=False)
         annot = pd.read_csv("annot.csv")
         # efficiently transform to dict
-        annotDict = dict(zip(annot.filename, annot.barcode))
+        annotDict = dict(zip(annot.uuid, annot.barcode))
         return (annot, annotDict)
 
 
