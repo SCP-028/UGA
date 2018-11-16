@@ -13,15 +13,15 @@ retrieve.ensemblAnnot <- function(df, codingOnly=F) {
         rownames(df) <- as.character(df$ensembl)
     }
     # Retrieve biomaRt annotation data frame
-    ensembl <- sub("(.*)\\..*$", "\\1", rownames(df))
+    # ensembl <- sub("(.*)\\..*$", "\\1", rownames(df))
+    ensembl <- rownames(df)
     message("Downloading biomaRt manifest...")
-    mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+    mart <- useDataset("hsapiens_gene_ensembl", useEnsembl("ensembl"))
     message("Retrieving annotation data...")
-    ensemblAnnot <- getBM(filters= "ensembl_gene_id",
-                          attributes= c("ensembl_gene_id", "hgnc_symbol",
+    ensemblAnnot <- getBM(filters= "ensembl_gene_id_version",
+                          attributes= c("ensembl_gene_id_version", "ensembl_gene_id", "hgnc_symbol",
                                         "entrezgene", "gene_biotype", "description", "definition_1006"),
                           values=ensembl, mart= mart)
-    ensemblAnnot <- ensemblAnnot[ensemblAnnot$hgnc_symbol != '', ]
     if (codingOnly) {
         ensemblAnnot <- ensemblAnnot[ensemblAnnot$gene_biotype == 'protein_coding', ]
         ensemblAnnot$gene_biotype <- NULL
