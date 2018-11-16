@@ -1,22 +1,31 @@
 #!/bin/bash
-OUTPUT="counts.tsv"
+# Make sure to put this in the directory with all the downloaded directories from TCGA
+ANNOTATION="/mnt/storage/yi/data/TCGA/annotation/fpkm_annot.csv"
+OUTPUT="FPKM.tsv"
+#########################################
 # first gunzip all gz files
 for f in ./*/*.gz; do
     gunzip "$f"
 done
 
-# merge 2nd column of counts files
-tmp=$(mktemp)
-counts_files=(*/*.counts)
-## keep both columns of first file
-cp "${counts_files[1]}" "$OUTPUT"
-echo "FILEID\t${counts_files[1]}" >> "$OUTPUT"
+# get unique projects
+awk -F, 'NR > 1 {print $3}' "$ANNOTATION" | sort | uniq > projects.out
+while read -u 10 proj # for each project, -u 10 is for preventing reading from stdin in loop
+do
+    # get file names in project, variables used in awk have to be defined
+    mapfile -t proj_files < <(awk -F, -v proj="$proj" '$3 == proj {print $1 "/" $2}' "$ANNOTATION" | sed 's/\.gz$//g')
 
-## keep 2nd column of other files
-for f in "${counts_files[@]:1}"; do
-    cat "$f" > "$tmp"
-    echo "FILEID\t$f" >> "$tmp"
-    paste "$OUTPUT" <(cut -d $'\t' -f2- "$tmp") > "_$OUTPUT" && mv "_$OUTPUT" "$OUTPUT"
-done
-tail -n 1 "$OUTPUT" > "$tmp" && head -n -1 "$OUTPUT" >> "$tmp" && mv "$tmp" "$OUTPUT"
-sed -i 's/\.htseq\.counts//g' "$OUTPUT"
+    tmp=$(mktemp)
+    # keep both columns in the first file
+    cp "${proj_files[1]}" "$proj.$OUTPUT"
+    echo -e "FILEID\t${proj_files[1]}" >> "$proj.$OUTPUT"
+    # keep second column of other files
+    for f in "${proj_files[@]:2}"; do
+        cp "$f" "$tmp"
+        echo -e "FILEID\t$f" >> "$tmp"
+        paste "$proj.$OUTPUT" <(cut -d $'\t' -f2- "$tmp") > "$OUTPUT" && mv "$OUTPUT" "$proj.$OUTPUT"
+    done
+    tail -n 1 "$proj.$OUTPUT" > "$tmp" && head -n -1 "$proj.$OUTPUT" >> "$tmp" && mv "$tmp" "$proj.$OUTPUT"
+    sed -i 's/\.htseq\.counts//g' "$proj.$OUTPUT"
+done 10< projects.out && rm projects.out
+
