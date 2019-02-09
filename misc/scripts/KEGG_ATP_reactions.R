@@ -2,7 +2,6 @@ library(KEGGREST)
 library(data.table)
 library(tidyverse)
 library(ggpubr)
-library(cowplot)
 
 # Get all reactions associated with ATP (C00002) -----------------------------
 
@@ -88,7 +87,7 @@ save(res, hsa_rxn_one_ec, hsa_rxn_w_multiple_ec,
 # Convert entrez IDs to Ensembl gene IDs -------------------------------------
 
 rm(list=ls())
-load("/home/yi/storage/R_script/KEGG/KEGG_ATP_reactions.RData")
+load("/home/yi/storage/data/KEGG/KEGG_ATP_reactions.RData")
 annot <- data.table::fread("/home/yi/CSBL_shared/ID_mapping/Ensembl_symbol_entrez.csv")
 
 df <- rbind.data.frame(hsa_rxn_one_ec, hsa_rxn_w_multiple_ec) %>%
@@ -141,8 +140,8 @@ data.table::fwrite(df, file="./hsa_ATP_rxns.csv", row.names = F, col.names = T)
 
 # Load corresponding DEA results ---------------------------------------------
 rm(list=ls())
-df <- data.table::fread("hsa_ATP_rxns.csv")
-projects <- list.files("/home/yi/storage/data/TCGA/DEA/csv/")
+df <- data.table::fread("/home/yi/storage/data/KEGG/hsa_ATP_rxns.csv")
+projects <- list.files("/home/yi/storage/data/TCGA/DEA/csv/all_stages_proj/", pattern = "csv$")
 projects <- gsub("_.*$", "", projects)
 projects <- unique(projects)
 
@@ -152,8 +151,8 @@ comparisons <- c("II", "III", "IV")
 for (i in seq_along(projects)) {
   # Prepare data frame for plotting ------------------------------------------
   deg <- data.table::fread(
-    str_glue("/home/yi/storage/data/TCGA/DEA/csv/{projects[i]}_I_vs_N.csv")
-    ) %>%
+    str_glue("/home/yi/storage/data/TCGA/DEA/csv/all_stages_proj/{projects[i]}_I_vs_N.csv")
+  ) %>%
     rename(ensembl = V1) %>%
     mutate(ensembl = gsub("\\.\\d+$", "", ensembl)) %>%
     inner_join(df, by = "ensembl") %>%
@@ -173,8 +172,8 @@ for (i in seq_along(projects)) {
 
   for (j in seq_along(comparisons)) {
     tmp <- data.table::fread(
-      str_glue("/home/yi/storage/data/TCGA/DEA/csv/{projects[i]}_{comparisons[j]}_vs_N.csv")
-      ) %>%
+      str_glue("/home/yi/storage/data/TCGA/DEA/csv/all_stages_proj/{projects[i]}_{comparisons[j]}_vs_N.csv")
+    ) %>%
       rename(ensembl = V1) %>%
       mutate(ensembl = gsub("\\.\\d+$", "", ensembl)) %>%
       inner_join(df, by = "ensembl") %>%
@@ -199,16 +198,29 @@ for (i in seq_along(projects)) {
     left_join(data.table(stage = "Normal", facet = unique(degT$facet)),
               by = "stage")
   degDens <- rbind.data.frame(degN, degT)
-
-  ## Density plot
-  degDens$ATP <- -degDens$ATP  # larger value means consuming more ATP
   degDens$stage <- ifelse(degDens$stage == "Normal", "Normal", "Tumor")
-  p <- ggdensity(degDens, x = "ATP",
+  ## Density plot
+  degDensConsm <- degDens %>%
+    filter(ATP < 0) %>%
+    mutate(ATP = log2(-ATP))
+  p1 <- ggdensity(degDensConsm, x = "ATP",
                  add = "mean", rug = TRUE,
                  facet.by = "facet",
-                 color = "stage", fill = "stage")
-  p <- ggpar(p, palette = c("#00AFBB", "#E7B800"),
-             title = projects[i], legend = "right")
+                 color = "stage")
+  p1 <- ggpar(p1, palette = "jco", legend = "right",
+              title = str_glue("{projects[i]} ATP Consumption"))
+
+  degDensProd <- degDens %>%
+    filter(ATP > 0) %>%
+    mutate(ATP = log2(ATP))
+  p2 <- ggdensity(degDensProd, x = "ATP",
+                  add = "mean", rug = TRUE,
+                  facet.by = "facet",
+                  color = "stage")
+  p2 <- ggpar(p2, palette = "jco", legend = "right",
+              title = str_glue("{projects[i]} ATP Production"))
+
+  p <- ggarrange(p1, p2)
   ggsave(p, filename = str_glue("/home/yi/storage/data/KEGG/{projects[i]}.png"),
          device = "png", height = 9, width = 21, units = "in", dpi = "retina")
 
@@ -220,31 +232,63 @@ for (i in seq_along(projects)) {
   degQQ <- deg %>%
     filter(stage != "Normal") %>%
     left_join(degN, by = "reaction") %>%
-    rename(Tumor = ATP) %>%
-    mutate(Tumor = -Tumor, Normal = -Normal)
+    rename(Tumor = ATP)
+
+  degQQCsm <- degQQ %>%
+    filter(Tumor < 0) %>%
+    mutate(Normal = log(-Normal),
+           Tumor = log(-Tumor))
 
   # Main plot
-  pmain <- ggplot(degQQ, aes(x = Normal, y = Tumor, color = stage, shape = stage))+
+  pmain <- ggplot(degQQCsm, aes(x = Normal, y = Tumor, color = stage, shape = stage))+
     geom_point(alpha = 0.7, size = 1.2)+
     geom_abline(slope = 1, intercept = 0, aes(size = 0.7))+
-    ggtitle(projects[i])+
+    ggtitle(str_glue("{projects[i]} ATP Consuming"))+
     ggpubr::color_palette("jco")+
     theme_minimal()
   # Marginal densities along x axis
   xdens <- cowplot::axis_canvas(pmain, axis = "x")+
-    geom_density(data = degQQ, aes(x = Normal, color = stage, fill = stage),
+    geom_density(data = degQQCsm, aes(x = Normal),
                  alpha = 0.7, size = 0.2)
   # Marginal densities along y axis
   # Need to set coord_flip = TRUE, if you plan to use coord_flip()
   ydens <- cowplot::axis_canvas(pmain, axis = "y", coord_flip = TRUE)+
-    geom_density(data = degQQ, aes(x = Tumor, color = stage, fill = stage),
-                 alpha = 0.7, size = 0.2)+
+    geom_density(data = degQQCsm, aes(x = Tumor, color = stage),
+                 alpha = 0.3, size = 0.2)+
     coord_flip()+
     ggpubr::fill_palette("jco")
   p1 <- cowplot::insert_xaxis_grob(pmain, xdens, grid::unit(.2, "null"), position = "top")
-  p2 <- cowplot::insert_yaxis_grob(p1, ydens, grid::unit(.2, "null"), position = "right")
-  ggsave(p2, filename = str_glue("/home/yi/storage/data/KEGG/{projects[i]}_scatter.png"),
-         device = "png", height = 10, width = 10, units = "in", dpi = "retina")
+  p1 <- cowplot::insert_yaxis_grob(p1, ydens, grid::unit(.2, "null"), position = "right")
+
+  degQQProd <- degQQ %>%
+    filter(Tumor > 0) %>%
+    mutate(Normal = log(Normal),
+           Tumor = log(Tumor))
+
+  # Main plot
+  pmain <- ggplot(degQQProd, aes(x = Normal, y = Tumor, color = stage, shape = stage))+
+    geom_point(alpha = 0.7, size = 1.2)+
+    geom_abline(slope = 1, intercept = 0, aes(size = 0.7))+
+    ggtitle(str_glue("{projects[i]} ATP Producing"))+
+    ggpubr::color_palette("jco")+
+    theme_minimal()
+  # Marginal densities along x axis
+  xdens <- cowplot::axis_canvas(pmain, axis = "x")+
+    geom_density(data = degQQProd, aes(x = Normal),
+                 alpha = 0.7, size = 0.2)
+  # Marginal densities along y axis
+  # Need to set coord_flip = TRUE, if you plan to use coord_flip()
+  ydens <- cowplot::axis_canvas(pmain, axis = "y", coord_flip = TRUE)+
+    geom_density(data = degQQProd, aes(x = Tumor, color = stage),
+                 alpha = 0.3, size = 0.2)+
+    coord_flip()+
+    ggpubr::fill_palette("jco")
+  p2 <- cowplot::insert_xaxis_grob(pmain, xdens, grid::unit(.2, "null"), position = "top")
+  p2 <- cowplot::insert_yaxis_grob(p2, ydens, grid::unit(.2, "null"), position = "right")
+
+  p <- ggarrange(p1, p2)
+  ggsave(p, filename = str_glue("/home/yi/storage/data/KEGG/{projects[i]}_scatter.png"),
+         device = "png", height = 9, width = 21, units = "in", dpi = "retina")
 }
 
 # sessionInfo()
