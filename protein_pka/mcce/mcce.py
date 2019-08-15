@@ -358,7 +358,7 @@ class pdb:
 
     def calc_pka(self, id, clean=True):
         """ Calculate protein pKa values using MCCE.
-            http://www.sci.ccny.cuny.edu/~jmao/mcce/manual.html
+            https://sites.google.com/site/mccewiki/home
 
         Parameters
         ----------
