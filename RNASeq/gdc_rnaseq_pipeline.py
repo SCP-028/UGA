@@ -84,7 +84,7 @@ for d in [
 # Log settings
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-handler = logging.FileHandler(os.path.join(__file__.rstrip(".py"), ".log"))
+handler = logging.FileHandler(os.path.join(f"{__file__.rstrip('.py')}.log"))
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter(
     "%(asctime)s [%(levelname)s]{%(lineno)d:%(funcName)12s()} %(message)s",
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     )
     filenames = filenames.tolist()
     sample_groups = [x.replace("/", "_") for x in design_mat["sample_group"]]
-    for i, (f, sg) in enumerate(filenames, sample_groups):
+    for i, (f, sg) in enumerate(zip(filenames, sample_groups)):
         if os.path.exists(f"{RES_DIR}/fastp/{sg}.json"):
             continue
         logger.info(f"Running fastp on sample {sg}...")
@@ -279,14 +279,14 @@ if __name__ == "__main__":
                 --sjdbOverhang 100 \
                 --sjdbGTFfile {GENCODE_PATH} \
                 --runThreadN 8 \
-                --outFileNamePrefix {WORK_DIR}/logs/star_index_""",
+                --outFileNamePrefix {WORK_DIR}/logs/star_index""",
             shell=True,
         )
         logger.info(f"STAR index built to {STAR_INDEX_DIR}")
 
     # Run STAR for each sample if output files are not found
     sg_sms = design_mat["sample_group"].apply(os.path.basename)
-    for i, (sg, sm) in enumerate(sample_groups, sg_sms):
+    for i, (sg, sm) in enumerate(zip(sample_groups, sg_sms)):
         if os.path.exists(f"{RES_DIR}/counts/{sg}"):
             continue
         os.makedirs(f"{RES_DIR}/counts/{sg}")
