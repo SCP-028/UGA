@@ -245,15 +245,15 @@ if __name__ == "__main__":
     filenames = filenames.tolist()
     sample_groups = [x.replace("/", "_") for x in design_mat["sample_group"]]
     for i, (f, sg) in enumerate(zip(filenames, sample_groups)):
-        if os.path.exists(f"{RES_DIR}/fastp/{sg}.json"):
+        if os.path.exists(f"{RES_DIR}/fastp/{sg}_fastp.json"):
             continue
         logger.info(f"Running fastp on sample {sg}...")
         subprocess.check_call(
             f"""{FASTP_PATH} -V -i {f}_1.fq.gz -I {f}_2.fq.gz \
                 -o {RES_DIR}/data/{sg}_1.fq.gz \
                 -O {RES_DIR}/data/{sg}_2.fq.gz \
-                --html {RES_DIR}/fastp/{sg}.html \
-                --json {RES_DIR}/fastp/{sg}.json \
+                --html {RES_DIR}/fastp/{sg}_fastp.html \
+                --json {RES_DIR}/fastp/{sg}_fastp.json \
                 -w 4""",
             shell=True,
         )
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     for i, (sg, sm) in enumerate(zip(sample_groups, sg_sms)):
         if os.path.exists(f"{RES_DIR}/counts/{sg}"):
             continue
-        os.makedirs(f"{RES_DIR}/counts/{sg}")
+        os.makedirs(f"{RES_DIR}/bam/{sg}")
         logger.info(f"Aligning sample {sg}")
         subprocess.check_call(
             f"""{STAR_PATH} \
