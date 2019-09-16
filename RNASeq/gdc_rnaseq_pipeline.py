@@ -287,9 +287,11 @@ if __name__ == "__main__":
     # Run STAR for each sample if output files are not found
     sg_sms = design_mat["sample_group"].apply(os.path.basename)
     for i, (sg, sm) in enumerate(zip(sample_groups, sg_sms)):
-        if os.path.exists(f"{RES_DIR}/counts/{sg}"):
+        if os.path.exists(f"{RES_DIR}/counts/{sg}") and os.path.exists(
+            f"{RES_DIR}/bam/{sg}"
+        ):
             continue
-        os.makedirs(f"{RES_DIR}/bam/{sg}")
+        os.makedirs(f"{RES_DIR}/bam/{sg}", exist_ok=True)
         logger.info(f"Aligning sample {sg}")
         subprocess.check_call(
             f"""{STAR_PATH} \
