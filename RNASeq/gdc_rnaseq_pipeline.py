@@ -79,7 +79,7 @@ for d in [
     f"{RES_DIR}/fastqc",
     f"{RES_DIR}/bam",
     f"{RES_DIR}/counts",
-    f"{RES_DIR}/tpm",
+    f"{RES_DIR}/tpm/quant_files",
     STAR_INDEX_DIR,
 ]:
     os.makedirs(d, exist_ok=True)
@@ -372,15 +372,20 @@ if __name__ == "__main__":
     counts_table = []
     tpm_table = []
     for sg in sample_groups:
+        # Combine counts files into one table
         df = pd.read_table(f"{RES_DIR}/counts/{sg}.tsv", header=None).iloc[:, 0:2]
         df.columns = ["Ensembl", "count"]
         df["sample_group"] = sg
         counts_table.append(df)
 
+        # Combine TPM files, also copy the quant.sf files to a separate folder
         df = pd.read_table(f"{RES_DIR}/tpm/{sg}/quant.sf")[["Name", "TPM"]]
         df.columns = ["Ensembl", "TPM"]
         df["sample_group"] = sg
         tpm_table.append(df)
+        shutil.copy(
+            f"{RES_DIR}/tpm/{sg}/quant.sf", f"{RES_DIR}/tpm/quant_files/{sg}.tsv"
+        )
 
     counts_table = pd.concat(counts_table, axis=0, ignore_index=True)
     counts_table = counts_table.pivot(
@@ -391,5 +396,7 @@ if __name__ == "__main__":
 
     counts_table.to_csv(f"{RES_DIR}/counts.csv")
     tpm_table.to_csv(f"{RES_DIR}/TPM.csv")
+
+    logger.info("\x1b[31;1m" + "Transcript quantification finished!" + "\x1b[0m")
     # Cleanup
     # shutil.rmtree(DATA_DIR)
