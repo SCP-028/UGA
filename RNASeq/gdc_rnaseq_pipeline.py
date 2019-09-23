@@ -31,6 +31,7 @@ Output:
 
 Software and data:
     - fastp v0.20.0: https://github.com/OpenGene/fastp
+    - FastQC v0.11.8: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
     - multiQC v1.7: https://multiqc.info
     - STAR v2.7.2b: https://github.com/alexdobin/STAR
     - Salmon v0.14.1: https://github.com/COMBINE-lab/salmon
@@ -67,6 +68,7 @@ GENCODE_PATH = os.path.join(WORK_DIR, "genome", "gencode.vM22.annotation.gtf")
 STAR_INDEX_DIR = os.path.join(WORK_DIR, "star_index")
 
 FASTP_PATH = os.path.expanduser("~/pkg/bin/fastp")
+FASTQC_PATH = os.path.expanduser("~/pkg/bin/fastqc")
 MULTIQC_PATH = os.path.expanduser("~/.local/bin/multiqc")
 STAR_PATH = os.path.expanduser("~/pkg/bin/STAR")
 SALMON_PATH = os.path.expanduser("~/pkg/bin/salmon/bin/salmon")
@@ -74,6 +76,7 @@ SALMON_PATH = os.path.expanduser("~/pkg/bin/salmon/bin/salmon")
 for d in [
     f"{RES_DIR}/data",
     f"{RES_DIR}/fastp/multiqc",
+    f"{RES_DIR}/fastqc",
     f"{RES_DIR}/bam",
     f"{RES_DIR}/counts",
     f"{RES_DIR}/tpm",
@@ -200,6 +203,7 @@ def ConcatSamples(samples: List[str]):
 
 
 if __name__ == "__main__":
+    logger.info("\x1b[31;1m" + "/*** GDC RNA-Seq pipeline started! ***/" + "\x1b[0m")
     ###################################################################
     #                        Get design matrix                        #
     ###################################################################
@@ -260,8 +264,18 @@ if __name__ == "__main__":
         logger.info(f"Generated fastp report for sample {sg}")
 
     subprocess.check_call(
-        f"{MULTIQC_PATH} {RES_DIR}/fastp/ -o {RES_DIR}/fastp/multiqc/", shell=True
+        f"{MULTIQC_PATH} {RES_DIR}/fastp/ -m fastp -o {RES_DIR}/fastp/multiqc/",
+        shell=True,
     )
+
+    if not os.path.exists(f"{RES_DIR}/fastqc/multiqc_report.html"):
+        subprocess.check_call(
+            f"{FASTQC_PATH} {RES_DIR}/data/* --noextract -o {RES_DIR}/fastqc/ -t 4"
+        )
+        subprocess.check_call(
+            f"{MULTIQC_PATH} {RES_DIR}/fastp/ -m fastqc -o {RES_DIR}/fastqc/",
+            shell=True,
+        )
 
     ###################################################################
     #                 Align sequences and call counts                 #
@@ -351,4 +365,31 @@ if __name__ == "__main__":
             shell=True,
         )
 
+    ###################################################################
+    #                 Combine counts and TPM tables                   #
+    ###################################################################
+    logger.info("\x1b[33;21m" + "Step 6: Combine counts and TPM tables" + "\x1b[0m")
+    counts_table = []
+    tpm_table = []
+    for sg in sample_groups:
+        df = pd.read_table(f"{RES_DIR}/counts/{sg}.tsv", header=None).iloc[:, 0:2]
+        df.columns = ["Ensembl", "count"]
+        df["sample_group"] = sg
+        counts_table.append(df)
+
+        df = pd.read_table(f"{RES_DIR}/tpm/{sg}/quant.sf")[["Name", "TPM"]]
+        df.columns = ["Ensembl", "TPM"]
+        df["sample_group"] = sg
+        tpm_table.append(df)
+
+    counts_table = pd.concat(counts_table, axis=0, ignore_index=True)
+    counts_table = counts_table.pivot(
+        index="Ensembl", columns="sample_group", values="count"
+    )
+    tpm_table = pd.concat(tpm_table, axis=0, ignore_index=True)
+    tpm_table = tpm_table.pivot(index="Ensembl", columns="sample_group", values="TPM")
+
+    counts_table.to_csv(f"{RES_DIR}/counts.csv")
+    tpm_table.to_csv(f"{RES_DIR}/TPM.csv")
+    # Cleanup
     # shutil.rmtree(DATA_DIR)
