@@ -79,7 +79,7 @@ for d in [
     f"{RES_DIR}/fastqc",
     f"{RES_DIR}/bam",
     f"{RES_DIR}/counts",
-    f"{RES_DIR}/tpm/quant_files",
+    f"{RES_DIR}/tpm",
     STAR_INDEX_DIR,
 ]:
     os.makedirs(d, exist_ok=True)
@@ -383,9 +383,6 @@ if __name__ == "__main__":
         df.columns = ["Ensembl", "TPM"]
         df["sample_group"] = sg
         tpm_table.append(df)
-        shutil.copy(
-            f"{RES_DIR}/tpm/{sg}/quant.sf", f"{RES_DIR}/tpm/quant_files/{sg}.tsv"
-        )
 
     counts_table = pd.concat(counts_table, axis=0, ignore_index=True)
     counts_table = counts_table.pivot(
