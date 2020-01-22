@@ -31,17 +31,19 @@ Output:
 
 Software and data:
     - fastp v0.20.0: https://github.com/OpenGene/fastp
-    - FastQC v0.11.8: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
-    - multiQC v1.7: https://multiqc.info
+    - FastQC v0.11.9: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.9.zip
+    - multiQC v1.8: https://multiqc.info
     - STAR v2.7.2b: https://github.com/alexdobin/STAR
-    - Salmon v0.14.1: https://github.com/COMBINE-lab/salmon
-    - Reference genome: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M22/GRCm38.p6.genome.fa.gz
-    - Reference transcriptome: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M22/gencode.vM22.transcripts.fa.gz
-    - Gene annotation: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M22/gencode.vM22.annotation.gtf.gz
+    - Salmon v1.1.0: https://github.com/COMBINE-lab/salmon/releases/download/v1.1.0/salmon-1.1.0_linux_x86_64.tar.gz
+    - Reference genome: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M24/GRCm38.primary_assembly.genome.fa.gz
+    - Reference transcriptome: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M24/gencode.vM24.transcripts.fa.gz
+    - Gene annotation: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M24/gencode.vM24.annotation.gtf.gz
 
 References:
     https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/Expression_mRNA_Pipeline/
     https://github.com/akahles/icgc_rnaseq_align/blob/master/star_align.py
+    https://salmon.readthedocs.io/en/latest/salmon.html
+    https://combine-lab.github.io/alevin-tutorial/2019/selective-alignment/
     Choice of software: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4728800/
 """
 import glob
@@ -62,9 +64,9 @@ RES_DIR = os.path.join(WORK_DIR, "results")
 
 REFERENCE_GENOME_PATH = os.path.join(WORK_DIR, "genome", "GRCm38.p6.genome.fa")
 REFERENCE_TRANSCRIPTOME_PATH = os.path.join(
-    WORK_DIR, "genome", "gencode.vM22.transcripts.fa"
+    WORK_DIR, "genome", "gencode.vM24.transcripts.fa"
 )
-GENCODE_PATH = os.path.join(WORK_DIR, "genome", "gencode.vM22.annotation.gtf")
+GENCODE_PATH = os.path.join(WORK_DIR, "genome", "gencode.vM24.annotation.gtf")
 STAR_INDEX_DIR = os.path.join(WORK_DIR, "star_index")
 
 FASTP_PATH = os.path.expanduser("~/pkg/bin/fastp")
@@ -301,7 +303,7 @@ if __name__ == "__main__":
     # Run STAR for each sample if output files are not found
     sg_sms = design_mat["sample_group"].apply(os.path.basename)
     for i, (sg, sm) in enumerate(zip(sample_groups, sg_sms)):
-        if os.path.exists(f"{RES_DIR}/counts/{sg}") and os.path.exists(
+        if os.path.exists(f"{RES_DIR}/counts/{sg}.tsv") and os.path.exists(
             f"{RES_DIR}/bam/{sg}"
         ):
             continue
