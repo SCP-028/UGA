@@ -114,6 +114,11 @@ if not pathlib.Path(
     )
     subprocess.check_call(
         f'''{DOCKER_EXE} "multiqc {DOCKER_RES_DIR}/fastp/fastqc_reports/ \
-            -m fastqc -o {DOCKER_RES_DIR}/fastp/fastqc_reports/"''',
+            -m fastqc -o {DOCKER_RES_DIR}/fastp/multiqc/fastqc/"''',
+        shell=True,
+    )
+    subprocess.check_call(
+        f'''{DOCKER_EXE} "multiqc {DOCKER_RES_DIR}/fastp/fastqc_reports/ \
+            -m fastqc -o {DOCKER_RES_DIR}/fastp/multiqc/fastqc/ --interactive"''',
         shell=True,
     )
