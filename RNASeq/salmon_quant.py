@@ -22,7 +22,7 @@ DOCKER_EXE = "docker exec rnaseq_Yi bash -c"
 
 DOCKER_WORK_DIR = pathlib.Path("/home/data/data/JLU_mouse/results")
 DOCKER_DATA_DIR = pathlib.Path(DOCKER_WORK_DIR, "fastp")
-DOCKER_QUANT_DIR = pathlib.Path(DOCKER_WORK_DIR, "quant")
+DOCKER_QUANT_DIR = pathlib.Path(DOCKER_WORK_DIR, "quant", "multiqc_report")
 DOCKER_SALMON_IDX = pathlib.Path("/home/data/data/annotation/genome/mouse/salmon_index")
 
 
@@ -69,3 +69,9 @@ for sID in sampleIDs:
         -o {DOCKER_QUANT_DIR}/{sID}_salmon"''',
         shell=True,
     )
+
+subprocess.check_call(
+    f'''{DOCKER_EXE} "multiqc {DOCKER_RES_DIR}/quant/ \
+            -m salmon -o {DOCKER_RES_DIR}/quant/multiqc_report/ "''',
+    shell=True,
+)

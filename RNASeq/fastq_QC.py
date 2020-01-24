@@ -22,7 +22,8 @@ DOCKER_RES_DIR = pathlib.Path(DOCKER_WORK_DIR, "results")
 for d in [
     f"{RES_DIR}/fastp/fastp_reports",
     f"{RES_DIR}/fastp/fastqc_reports",
-    f"{RES_DIR}/fastp/multiqc",
+    f"{RES_DIR}/fastp/multiqc/fastp",
+    f"{RES_DIR}/fastp/multiqc/fastqc",
 ]:
     pathlib.Path(d).mkdir(parents=True, exist_ok=True)
 
